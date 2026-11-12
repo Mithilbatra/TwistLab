@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-base: #08090b;
+  --color-panel: #0d0f12;
+  --color-raised: #15181c;
+  --color-line: #ffffff14;
+  --color-accent: #c8f24e;
+  --color-accent-ink: #151c02;
+
+  --animate-move-in: move-in 1.2s ease-out forwards;
+
+  @keyframes move-in {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    12% {
+      opacity: 1;
+      transform: none;
+    }
+    60% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.3;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-base);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--color-zinc-300);
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #ffffff24 transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent) 75%, transparent);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Sliders: a hairline track with a single accent thumb. */
+  input[type='range'] {
+    appearance: none;
+    height: 16px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 2px;
+    border-radius: 1px;
+    background: #ffffff2e;
+  }
+  input[type='range']::-moz-range-track {
+    height: 2px;
+    border-radius: 1px;
+    background: #ffffff2e;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-panel);
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-panel);
+  }
+}
+
+/* The stage behind the cube: a soft pool of light that falls off to the app background. */
+.viewport {
+  background: radial-gradient(85% 70% at 50% 44%, #1b1e24 0%, #101216 52%, var(--color-base) 100%);
+}
