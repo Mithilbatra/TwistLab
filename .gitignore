@@ -1,0 +1,8 @@
+node_modules
+dist
+test-results
+playwright-report
+*.local
+.DS_Store
+# macOS custom folder icon (the name ends in a carriage return)
+Icon
