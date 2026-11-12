@@ -6,14 +6,16 @@ The 2×2 and 3×3 are fully implemented. 4×4, Pyraminx, Megaminx and Skewb are 
 
 ## Features
 
-- **3D cube** built from individual cubies (26 on a 3×3, 8 on a 2×2) with rounded plastic bodies and raised stickers, studio lighting, a floor grid and contact shadows.
+- **3D cube** built from individual cubies (26 on a 3×3, 8 on a 2×2) with rounded plastic bodies and raised stickers, studio lighting, a floor of dots and contact shadows.
+- **An interface made of cube parts.** The six sections are the six faces: each has a sticker colour, and that colour becomes the accent of the whole interface while the section is open. Every move is drawn as a sticker in the colour of the face it turns, so an algorithm reads as a strip of colour.
 - **Turn it** with the keyboard, by dragging a face, or with notation. Orbit, zoom, reset the camera and change the perspective.
 - **Algorithm playground**: a real parser with clear syntax errors, play / pause / resume, step forward and back, reverse, copy, adjustable speed.
 - **Scramble, reset, undo, redo** and a full move history.
 - **Algorithm Lab**: 61 checked algorithms across OLL, PLL (all 21), F2L, cross, beginner method, two-look CFOP and finger tricks. Each one sets up the case it solves and plays step by step. Favourites are saved.
 - **Learn**: the seven-step layer-by-layer method. Each step greys out the pieces you do not need yet, demonstrates its algorithms on the cube, and gives random practice positions that are judged on the cube's real state.
 - **Timer**: Space to start and stop, configurable inspection, scrambles shown on the cube, best / mean / average of 5 / average of 12, a time-distribution chart, per-solve delete. Saved in the browser.
-- **Responsive**: a side rail and control panel on desktop, a tab bar and stacked layout on phones.
+- **A stage that reacts**: the last move stands behind the cube in dot-matrix type, the light behind the cube takes the colour of the face that turned, and all six colours bloom when the cube comes out solved.
+- **Responsive**: a rail of six stickers and a control panel on desktop, a tab bar and stacked layout on phones.
 
 ## Quick start
 
@@ -141,6 +143,16 @@ The logical state updates **synchronously** on every move and never waits for an
 
 Turns are tweened in the React Three Fiber frame loop with a cubic ease, rather than with a separate animation library. One clock drives everything, and the queue can be stepped deterministically in tests.
 
+### The look
+
+The interface is built from the cube itself, in three ideas. The tokens and the handful of custom utilities behind them are in `src/index.css`.
+
+- **Six faces, six colours.** `NAV` in `Sidebar.tsx` gives each section a face. The app root carries it as `data-sticker`, and CSS turns that into the accent colour for everything inside.
+- **Moves are stickers.** `turnedFace` in `CubeState.ts` reads the colour of the face a move turns off the centres, so the colour is right however the cube is held: on a cube held yellow-up, `U` is a yellow sticker. Slices and rotations turn no single face and stay grey, and so does every move on a 2×2, which has no centres. `turnedFaces` does this for a whole sequence, following the centres through wide moves, slices and rotations.
+- **Dots.** Display type is [Doto](https://github.com/oliverlalan/Doto), a dot-matrix face whose glyphs are grids of squares. It is used large (the clock, the move on stage) and, joined into solid strokes by a hairline outline, for titles and counters. The floor under the cube is the same grid in perspective.
+
+The stage behind the cube is plain HTML and CSS. The 3D canvas is transparent and sits in front of it, so the glow and the giant move letter are hidden by the cube exactly as if they were behind it. Nothing on the stage animates once it has settled, so an idle cube still costs no frames.
+
 ### Adding a puzzle
 
 1. Implement `PuzzleEngine<State, Move>` (`createSolved`, `parse`, `apply`, `invert`, `isSolved`, `validate`, `scramble`, `countsAsMove`).
@@ -152,7 +164,7 @@ The stores, playback, history, timer and UI use only the engine interface. Anoth
 ## Testing
 
 ```bash
-npm test          # 169 unit and component tests
+npm test          # 170 unit and component tests
 npm run test:e2e  # 12 end-to-end tests in a real browser
 ```
 
@@ -161,6 +173,7 @@ What is verified:
 - **Move algebra**, on both puzzles: `R R'` and `U U'` restore the state, `R2 = R R`, `R` four times is the identity, every move undone by its inverse (all positions and orientations), 300 random algorithms undone by their reversal, 50 scrambles undone by their inverse.
 - **Conventions**: each face turns clockwise seen from outside; slices, wide moves and rotations agree with their definitions in terms of face turns (`M = x' L' R`, `r = R M'`, …).
 - **Known results**: `R U R' U'` has order 6, `R U` has order 105 (15 on a 2×2), `R U2 D' B D'` has order 1260.
+- **Face colours**: the colour named for each move follows the centres through rotations, slices and wide moves, and a 2×2 names none.
 - **Validity**: 3000-move random walks through faces, slices, wide moves and rotations stay valid at every step; the validator rejects a twisted corner, a flipped edge, a swapped pair, impossible centres and broken structure.
 - **Parser**: valid notation, groups and repeats, and 17 kinds of invalid input, each with its error position.
 - **Animation**: the model comes to rest on exactly the logical state; completing animations never changes the logical state; moves, undo and redo arriving mid-animation stay consistent.

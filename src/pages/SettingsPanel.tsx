@@ -35,7 +35,7 @@ export function SettingsPanel() {
   const slider = 'w-32';
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-dotted divide-white/20">
       <section className="space-y-3 px-4 py-4">
         <Label>Animation and camera</Label>
         <label className="flex items-center justify-between gap-3">
@@ -50,7 +50,7 @@ export function SettingsPanel() {
               value={speed}
               onChange={(event) => setSpeed(Number(event.target.value))}
             />
-            <span className="w-10 text-right font-mono text-xs text-zinc-400">{speed}×</span>
+            <span className="w-10 text-right font-mono text-xs text-zinc-200">{speed}×</span>
           </span>
         </label>
         <label className="flex items-center justify-between gap-3">
@@ -65,7 +65,7 @@ export function SettingsPanel() {
               value={fov}
               onChange={(event) => setFov(Number(event.target.value))}
             />
-            <span className="w-10 text-right font-mono text-xs text-zinc-400">{fov}°</span>
+            <span className="w-10 text-right font-mono text-xs text-zinc-200">{fov}°</span>
           </span>
         </label>
       </section>
@@ -75,7 +75,7 @@ export function SettingsPanel() {
         <label className="mt-3 flex items-center justify-between gap-3">
           <span>
             Inspection time
-            <span className="ml-2 text-xs text-zinc-600">seconds, 0 for none</span>
+            <span className="ml-2 text-xs text-faint">seconds, 0 for none</span>
           </span>
           <input
             type="number"
@@ -84,7 +84,7 @@ export function SettingsPanel() {
             max={LIMITS.inspection[1]}
             value={inspection}
             onChange={(event) => setInspection(event.target.valueAsNumber)}
-            className="h-8 w-16 rounded-md border border-line bg-base px-2 text-right font-mono text-sm text-zinc-50 focus:border-zinc-500 focus:outline-none"
+            className="h-8 w-16 rounded-lg border border-line bg-base px-2 text-right font-mono text-sm text-zinc-50 focus:border-accent focus:outline-none"
           />
         </label>
       </section>
@@ -96,15 +96,15 @@ export function SettingsPanel() {
             Restore defaults
           </Button>
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+        <p className="mt-1 text-xs leading-relaxed text-muted">
           Choose a move, then press its new key. <Kbd>⇧</Kbd> reverses any turn and <Kbd>{isMac ? '⌥' : 'Alt'}</Kbd> makes
           a face turn wide.
         </p>
-        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1">
+        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
           {Object.keys(keymap).map((family) => (
             <li key={family} className="flex items-center justify-between gap-2">
-              <span className={cx('truncate', !table[family] && 'text-zinc-600')}>
-                <span className="mr-2 inline-block w-3 font-mono text-zinc-100">{family}</span>
+              <span className={cx('truncate', !table[family] && 'text-faint')}>
+                <span className="mr-2 inline-block w-3 font-mono font-semibold text-zinc-50">{family}</span>
                 {MOVE_NAMES[family]}
               </span>
               <button
@@ -112,10 +112,10 @@ export function SettingsPanel() {
                 aria-label={`Key for ${family}, ${MOVE_NAMES[family]}: ${keymap[family] || 'none'}`}
                 onClick={() => setBinding(binding === family ? null : family)}
                 className={cx(
-                  'h-7 min-w-9 shrink-0 rounded-md border px-2 font-mono text-xs transition-colors',
+                  'key h-7 min-w-9 shrink-0 rounded-md px-2 font-mono text-xs font-semibold',
                   binding === family
-                    ? 'border-accent text-accent'
-                    : 'border-line bg-white/[0.04] text-zinc-100 hover:bg-white/[0.09]',
+                    ? 'bg-accent text-accent-ink [--key-edge:color-mix(in_oklab,var(--color-accent)_48%,black)]'
+                    : 'bg-raised text-zinc-100 hover:bg-[#282a30]',
                 )}
               >
                 {binding === family ? '…' : keymap[family].toUpperCase() || '–'}
@@ -132,10 +132,10 @@ export function SettingsPanel() {
 
       <section className="px-4 py-4">
         <Label>Saved data</Label>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+        <p className="mt-1 text-xs leading-relaxed text-muted">
           Solves, favourites, lesson progress and these settings are stored in this browser only.
         </p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5 pb-1">
           <Button
             onClick={() => {
               if (window.confirm('Delete every recorded solve, for all puzzles? This cannot be undone.'))

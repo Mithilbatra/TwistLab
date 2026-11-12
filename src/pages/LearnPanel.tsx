@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Dumbbell, Play } from 'lucide-react';
 import { Transport } from '../components/algorithm/Transport';
-import { Button, cx, Label } from '../components/ui/ui';
-import { demoSetup, HOLD, laterPieces, lessonDone, LESSONS, parse3x3, practiceSetup } from '../engine/algorithms/lessons';
+import { Button, cx, Label, Stickers } from '../components/ui/ui';
+import { demoSetup, demoStrip, HOLD, laterPieces, lessonDone, LESSONS, parse3x3, practiceSetup } from '../engine/algorithms/lessons';
 import { PUZZLES } from '../engine/puzzles';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
@@ -59,15 +59,16 @@ export function LearnPanel() {
   };
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-dotted divide-white/20">
       <section className="px-4 py-4">
         <div className="flex items-baseline justify-between">
           <Label>Beginner's method</Label>
-          <span className="font-mono text-xs text-zinc-500">
+          <span className="font-mono text-xs text-muted">
             <span className="text-zinc-100">{LESSONS.filter((l) => completed.includes(l.id)).length}</span> / {LESSONS.length} complete
           </span>
         </div>
-        <ol className="mt-3 flex gap-1">
+        {/* One sticker per step: filled in once the step is done, ringed while it is open. */}
+        <ol className="mt-3 flex gap-1.5">
           {LESSONS.map((item, i) => {
             const done = completed.includes(item.id);
             return (
@@ -79,12 +80,12 @@ export function LearnPanel() {
                   aria-current={i === step ? 'step' : undefined}
                   onClick={() => setStep(i)}
                   className={cx(
-                    'flex h-7 w-full items-center justify-center rounded font-mono text-xs transition-colors',
-                    done ? 'bg-accent/20 text-accent' : 'bg-white/[0.05] text-zinc-500 hover:text-zinc-200',
-                    i === step && 'ring-1 ring-zinc-300',
+                    'flex aspect-square w-full items-center justify-center rounded-lg font-mono text-sm font-semibold transition-colors',
+                    done ? 'bg-accent text-accent-ink' : 'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.11] hover:text-zinc-100',
+                    i === step && 'outline-2 outline-offset-2 outline-zinc-50',
                   )}
                 >
-                  {done ? <Check size={13} /> : i + 1}
+                  {done ? <Check size={16} strokeWidth={3} /> : i + 1}
                 </button>
               </li>
             );
@@ -98,13 +99,17 @@ export function LearnPanel() {
       </div>
 
       <section className="px-4 py-4">
-        <p className="font-mono text-xs text-zinc-500">Step {step + 1}</p>
-        <h3 className="mt-0.5 text-base font-semibold text-zinc-50">{lesson.title}</h3>
-        <p className="mt-1 leading-relaxed text-zinc-400">{lesson.goal}</p>
-        <ol className="mt-3 space-y-2.5">
+        <p className="font-mono text-[10px] tracking-[0.16em] text-muted uppercase">
+          Step {step + 1} of {LESSONS.length}
+        </p>
+        <h3 className="display mt-1.5 text-[26px] text-zinc-50 uppercase">{lesson.title}</h3>
+        <p className="mt-2 leading-relaxed text-zinc-400">{lesson.goal}</p>
+        <ol className="mt-3.5 space-y-2.5">
           {lesson.steps.map((text, i) => (
             <li key={i} className="flex gap-3 leading-relaxed">
-              <span className="mt-px font-mono text-xs text-zinc-600">{i + 1}</span>
+              <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-[4px] bg-white/[0.08] font-mono text-[10px] font-semibold text-zinc-300">
+                {i + 1}
+              </span>
               <span>{text}</span>
             </li>
           ))}
@@ -113,20 +118,23 @@ export function LearnPanel() {
 
       <section className="px-4 py-4">
         <Label>Demonstrations</Label>
-        <ul className="mt-2.5 space-y-3.5">
-          {lesson.cases.map((item) => (
-            <li key={item.name} className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <h4 className="font-medium text-zinc-100">{item.name}</h4>
-                <p className="text-xs text-zinc-500">{item.when}</p>
-                <code className="mt-1 block font-mono text-[13px] text-zinc-300">{item.algorithm}</code>
-              </div>
-              <Button aria-label={`Demo: ${item.name}`} onClick={() => demonstrate(item.name, item.algorithm)}>
-                <Play />
-                Demo
-              </Button>
-            </li>
-          ))}
+        <ul className="mt-3 space-y-4">
+          {lesson.cases.map((item) => {
+            const strip = demoStrip(item.algorithm);
+            return (
+              <li key={item.name} className="flex items-start gap-3 pb-1">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-zinc-100">{item.name}</h4>
+                  <p className="text-xs text-muted">{item.when}</p>
+                  <Stickers moves={strip.moves} faces={strip.faces} className="mt-2" />
+                </div>
+                <Button aria-label={`Demo: ${item.name}`} onClick={() => demonstrate(item.name, item.algorithm)}>
+                  <Play />
+                  Demo
+                </Button>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -139,7 +147,7 @@ export function LearnPanel() {
               ? `Step solved in ${movesUsed} ${movesUsed === 1 ? 'move' : 'moves'}. Inspect the cube, then carry on.`
               : 'Solve the coloured pieces. Turn with the keyboard or drag a face.'}
         </p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5 pb-1">
           <Button variant={practising && !solved ? 'outline' : 'primary'} onClick={practise}>
             <Dumbbell />
             {practising ? 'New position' : 'Practice'}

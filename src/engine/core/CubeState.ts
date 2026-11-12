@@ -81,3 +81,28 @@ export function centreFrame(state: CubeState, n: number): Mat3 {
   const [x, y, z] = [image(0), image(1), image(2)];
   return [x[0], y[0], z[0], x[1], y[1], z[1], x[2], y[2], z[2]].map((v) => v / max);
 }
+
+/**
+ * The colour of the face a move turns, as a home-face index (+x −x +y −y +z −z), read
+ * off the centres: after a rotation, R turns whichever face is on the right now. Null
+ * when no single face turns (slices, rotations) or the cube has no centres to go by.
+ */
+export function turnedFace(state: CubeState, move: Pick<Move, 'axis' | 'layers'>, n: number): number | null {
+  const max = n - 1;
+  const outward = move.layers.includes(max);
+  if (n % 2 === 0 || outward === move.layers.includes(-max)) return null;
+  const frame = centreFrame(state, n);
+  // Row `axis` of the frame names the home axis that now lies along it, and which way round.
+  const home = [0, 1, 2].find((h) => frame[move.axis * 3 + h] !== 0)!;
+  return home * 2 + (frame[move.axis * 3 + home] > 0 === outward ? 0 : 1);
+}
+
+/** `turnedFace` for every move of a sequence played in order from `start`. */
+export function turnedFaces(start: CubeState, moves: readonly Move[], n: number): (number | null)[] {
+  let state = start;
+  return moves.map((move) => {
+    const face = turnedFace(state, move, n);
+    state = applyMove(state, move);
+    return face;
+  });
+}

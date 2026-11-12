@@ -28,14 +28,14 @@ export function TimerPanel() {
   ];
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-dotted divide-white/20">
       <section aria-label="Statistics" className="px-4 py-4">
         <Label>Statistics</Label>
         <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-4">
           {stats.map(([label, value]) => (
             <div key={label}>
-              <dt className="text-[11px] text-zinc-500">{label}</dt>
-              <dd className="mt-0.5 text-lg font-semibold text-zinc-50">{value}</dd>
+              <dt className="font-mono text-[10px] tracking-[0.1em] text-muted uppercase">{label}</dt>
+              <dd className="display mt-1 text-[26px] text-zinc-50">{value}</dd>
             </div>
           ))}
         </dl>
@@ -49,7 +49,7 @@ export function TimerPanel() {
       <section className="flex items-center justify-between gap-3 px-4 py-3">
         <label htmlFor="inspection" className="text-zinc-300">
           Inspection
-          <span className="ml-2 text-xs text-zinc-600">seconds, 0 for none</span>
+          <span className="ml-2 text-xs text-faint">seconds, 0 for none</span>
         </label>
         <input
           id="inspection"
@@ -59,25 +59,31 @@ export function TimerPanel() {
           max={LIMITS.inspection[1]}
           value={inspection}
           onChange={(event) => useSettings.getState().setInspection(event.target.valueAsNumber)}
-          className="h-8 w-16 rounded-md border border-line bg-base px-2 text-right font-mono text-sm text-zinc-50 focus:border-zinc-500 focus:outline-none"
+          className="h-8 w-16 rounded-lg border border-line bg-base px-2 text-right font-mono text-sm text-zinc-50 focus:border-accent focus:outline-none"
         />
       </section>
 
       <section aria-label="Solve history">
         <div className="flex items-baseline justify-between px-4 pt-4 pb-2">
           <Label>Solves</Label>
-          <span className="font-mono text-xs text-zinc-500">{solves.length}</span>
+          <span className="font-mono text-xs text-muted">{solves.length}</span>
         </div>
         {solves.length === 0 ? (
-          <p className="px-4 pb-4 text-xs text-zinc-600">No solves yet. Scramble your cube to match, then hold Space.</p>
+          <p className="mx-4 mb-4 rounded-lg border border-dotted border-white/20 px-3 py-3 text-xs leading-relaxed text-muted">
+            No solves yet. Scramble your cube to match, then hold Space.
+          </p>
         ) : (
-          <ol className="divide-y divide-line">
+          <ol className="divide-y divide-dotted divide-white/15">
             {solves.toReversed().map((solve, i) => (
               <li key={solve.id} className="flex items-center gap-3 py-1 pr-2 pl-4">
-                <span className="w-6 font-mono text-xs text-zinc-600">{solves.length - i}</span>
+                <span className="w-6 font-mono text-xs text-faint">{solves.length - i}</span>
                 <span className="w-16 font-mono text-sm text-zinc-100 tabular-nums">{formatTime(solve.ms)}</span>
-                <span className="w-5 text-[10px] font-semibold text-accent">{solve.ms === best && 'PB'}</span>
-                <span className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-600" title={solve.scramble}>
+                <span className="w-6">
+                  {solve.ms === best && (
+                    <span className="rounded-[4px] bg-accent px-1 py-0.5 font-mono text-[10px] font-bold text-accent-ink">PB</span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-mono text-xs text-faint" title={solve.scramble}>
                   {solve.scramble}
                 </span>
                 <IconButton
