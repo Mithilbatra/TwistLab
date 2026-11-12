@@ -1,5 +1,13 @@
 # TwistLab
 
+<p align="center">
+  <a href="https://mithilbatra.github.io/TwistLab/"><img src="docs/demo.gif" width="100%" alt="TwistLab: a 3×3 cube is scrambled move by move, reset, then turned into a checkerboard with M2 E2 S2" /></a>
+</p>
+
+<p align="center">
+  <a href="https://mithilbatra.github.io/TwistLab/"><b>Try it live</b></a> &nbsp;·&nbsp; runs in the browser, nothing to install &nbsp;·&nbsp; <a href="LICENSE">MIT licence</a>
+</p>
+
 An interactive 3D playground for twisty puzzles. Turn a real 3D cube with the keyboard or by dragging its faces, run algorithms move by move, learn the beginner's method on the cube itself, and time your solves.
 
 The 2×2 and 3×3 are fully implemented. 4×4, Pyraminx, Megaminx and Skewb are listed as upcoming and plug into the same engine interface.
@@ -196,3 +204,7 @@ There is no backend. The stores are the only place that reads or writes saved da
 - The timer has no +2 or DNF penalties. If inspection runs out, the solve starts.
 - The Algorithm Lab and lessons are for the 3×3.
 - Undo covers turns. Reset and scramble start a new history.
+
+## Licence
+
+[MIT](LICENSE).
