@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Play, Star } from 'lucide-react';
 import { Transport } from '../components/algorithm/Transport';
-import { Button, cx, IconButton, Label } from '../components/ui/ui';
+import { Button, cx, IconButton, Label, Stickers } from '../components/ui/ui';
 import { ALGORITHMS, CATEGORIES, type Algorithm, type Category } from '../engine/algorithms/AlgorithmLibrary';
-import { demoSetup, parse3x3 } from '../engine/algorithms/lessons';
+import { demoSetup, demoStrip, parse3x3 } from '../engine/algorithms/lessons';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
 
@@ -19,31 +19,33 @@ function runDemo(algorithm: Algorithm) {
 }
 
 function AlgorithmRow({ algorithm, favourite, active }: { algorithm: Algorithm; favourite: boolean; active: boolean }) {
+  const strip = demoStrip(algorithm.notation);
   return (
-    <li className={cx('px-4 py-3.5 transition-colors', active && 'bg-white/[0.04]')}>
+    <li className={cx('relative px-4 py-3.5 transition-colors', active && 'bg-accent/[0.08]')}>
+      {active && <span aria-hidden="true" className="absolute inset-y-2.5 left-0 w-1 rounded-r bg-accent" />}
       <div className="flex items-center gap-2">
-        <h3 className="font-medium text-zinc-50">{algorithm.name}</h3>
-        <span className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+        <h3 className="text-sm font-semibold text-zinc-50">{algorithm.name}</h3>
+        <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-wider text-muted uppercase">
           <span className="flex gap-0.5" aria-hidden="true">
             {[1, 2, 3].map((level) => (
-              <span key={level} className={cx('h-2.5 w-0.5 rounded-full', level <= algorithm.difficulty ? 'bg-zinc-300' : 'bg-white/15')} />
+              <span key={level} className={cx('size-1.5 rounded-[1px]', level <= algorithm.difficulty ? 'bg-accent' : 'bg-white/15')} />
             ))}
           </span>
           {DIFFICULTY[algorithm.difficulty]}
         </span>
-        <span className="ml-auto text-[10px] font-medium tracking-[0.12em] text-zinc-600 uppercase">{algorithm.categories[0]}</span>
+        <span className="ml-auto font-mono text-[10px] font-medium tracking-[0.12em] text-faint uppercase">{algorithm.categories[0]}</span>
         <IconButton
           label={favourite ? 'Remove from favourites' : 'Add to favourites'}
           aria-pressed={favourite}
           className="-mr-2"
           onClick={() => useAlgorithm.getState().toggleFavourite(algorithm.id)}
         >
-          <Star className={favourite ? 'fill-accent text-accent' : undefined} />
+          <Star className={favourite ? 'fill-cube-yellow text-cube-yellow' : undefined} />
         </IconButton>
       </div>
-      <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{algorithm.description}</p>
-      <div className="mt-2.5 flex items-center gap-3">
-        <code className="min-w-0 flex-1 font-mono text-[13px] leading-relaxed text-zinc-200">{algorithm.notation}</code>
+      <p className="mt-0.5 text-xs leading-relaxed text-muted">{algorithm.description}</p>
+      <div className="mt-2.5 flex items-start gap-3 pb-1">
+        <Stickers moves={strip.moves} faces={strip.faces} className="min-w-0 flex-1 pt-1" />
         <Button aria-label={`Execute ${algorithm.name}`} onClick={() => runDemo(algorithm)}>
           <Play />
           Execute
@@ -64,10 +66,10 @@ export function LabPanel() {
 
   return (
     <div>
-      <section className="px-4 pt-4 pb-3">
+      <section className="border-b border-dotted border-white/20 px-4 pt-4 pb-4">
         <div className="flex items-baseline justify-between">
-          <Label>Algorithm Lab</Label>
-          <span className="font-mono text-xs text-zinc-500">{shown.length}</span>
+          <Label>Algorithms</Label>
+          <span className="font-mono text-xs text-muted">{shown.length}</span>
         </div>
         <div role="tablist" aria-label="Categories" className="mt-3 flex flex-wrap gap-1">
           {(['Favourites', ...CATEGORIES] as const).map((name) => (
@@ -79,26 +81,28 @@ export function LabPanel() {
               onClick={() => setTab(name)}
               className={cx(
                 'flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors',
-                tab === name ? 'bg-white/10 text-zinc-50' : 'text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200',
+                tab === name ? 'bg-accent font-semibold text-accent-ink' : 'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.11] hover:text-zinc-100',
               )}
             >
-              {name === 'Favourites' && <Star size={12} className={favourites.length > 0 ? 'fill-accent text-accent' : undefined} />}
+              {name === 'Favourites' && <Star size={12} className={favourites.length > 0 ? 'fill-current' : undefined} />}
               {name}
             </button>
           ))}
         </div>
         {!is3x3 && (
-          <p className="mt-3 text-xs text-zinc-500">These are 3×3 algorithms. Running one switches to the 3×3.</p>
+          <p className="mt-3 text-xs text-muted">These are 3×3 algorithms. Running one switches to the 3×3.</p>
         )}
       </section>
       {/* Stays in view while the list scrolls, so the steps are visible whichever row was run. */}
-      <div className="sticky top-0 z-10 border-y border-line bg-panel empty:hidden">
+      <div className="sticky top-0 z-10 border-b border-dotted border-white/25 bg-panel empty:hidden">
         <Transport />
       </div>
       {shown.length === 0 ? (
-        <p className="px-4 py-6 text-zinc-500">No favourites yet. Star an algorithm to keep it here.</p>
+        <p className="mx-4 my-4 rounded-lg border border-dotted border-white/20 px-3 py-4 text-muted">
+          No favourites yet. Star an algorithm to keep it here.
+        </p>
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-dotted divide-white/20">
           {shown.map((algorithm) => (
             <AlgorithmRow
               key={algorithm.id}

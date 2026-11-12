@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationQueue, type Turn } from './animation/AnimationQueue';
-import { applyMove, applyMoves, type CubeState, type Cubie } from './core/CubeState';
+import { applyMove, applyMoves, turnedFaces, type CubeState, type Cubie } from './core/CubeState';
 import { createMove, formatMoves, invertMoves, type Move } from './core/Move';
 import { PUZZLES } from './puzzles';
 import type { CubePuzzle } from './puzzles/cubePuzzle';
@@ -180,6 +180,21 @@ describe('cube conventions', () => {
     expect(cube3.isSolved(run(cube3, 'M2 E2 S2'))).toBe(false);
     expect(cube3.isSolved(run(cube3, 'R'))).toBe(false);
     expect(cube2.isSolved(run(cube2, 'x2 y'))).toBe(true);
+  });
+
+  it('names the colour of the face each move turns, however the cube is held', () => {
+    // Home faces in order: red, orange, white, yellow, green, blue.
+    const faces = (algorithm: string) => turnedFaces(cube3.createSolved(), moves(cube3, algorithm), 3);
+    expect(faces('R L U D F B')).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(faces('r M E S x')).toEqual([0, null, null, null, null]); // a wide turn has a face; slices and rotations do not
+    // Held yellow-up (z2) the right face is orange and the top is yellow, while green still faces you.
+    expect(faces('z2 R U F')).toEqual([null, 1, 3, 4]);
+    // The colour follows the centres through the sequence: x and r bring green to the top, M brings blue.
+    expect(faces('U x U')).toEqual([2, null, 4]);
+    expect(faces('r U')).toEqual([0, 4]);
+    expect(faces('M U')).toEqual([null, 5]);
+    // A 2×2 has no centres, so none of its faces has a colour of its own.
+    expect(turnedFaces(cube2.createSolved(), moves(cube2, 'R U'), 2)).toEqual([null, null]);
   });
 });
 

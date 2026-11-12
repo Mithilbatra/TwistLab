@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, Check, Copy, Play, Redo2, Trash2, Undo2 } from 'lucide-react';
 import { Transport } from '../components/algorithm/Transport';
 import { Button, cx, IconButton, Label } from '../components/ui/ui';
+import { applyMoves, turnedFaces } from '../engine/core/CubeState';
+import { invertMoves } from '../engine/core/Move';
 import { PUZZLES } from '../engine/puzzles';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
@@ -11,11 +13,20 @@ const HISTORY_SHOWN = 240;
 
 function History() {
   const history = useCube((s) => s.history);
+  const state = useCube((s) => s.state);
+  const size = useCube((s) => PUZZLES[s.puzzleId].size);
   const canRedo = useCube((s) => s.future.length > 0);
   const scramble = useCube((s) => s.scramble);
   const { undo, redo, clearHistory } = useCube.getState();
   const list = useRef<HTMLOListElement>(null);
   const hidden = Math.max(0, history.length - HISTORY_SHOWN);
+
+  // Every move is a sticker in the colour of the face it turned. To find those colours, walk the cube back to
+  // where the first move shown started, then forward again.
+  const { shown, faces } = useMemo(() => {
+    const shown = history.slice(-HISTORY_SHOWN);
+    return { shown, faces: turnedFaces(applyMoves(state, invertMoves(shown)), shown, size) };
+  }, [history, state, size]);
 
   // Keep the newest move in view.
   useEffect(() => {
@@ -26,7 +37,7 @@ function History() {
     <section aria-label="Move history" className="px-4 py-4">
       <div className="flex items-center gap-2">
         <Label>History</Label>
-        <span className="font-mono text-xs text-zinc-500">{history.length}</span>
+        <span className="font-mono text-xs text-muted">{history.length}</span>
         <div className="ml-auto flex gap-0.5">
           <IconButton label="Undo" disabled={history.length === 0} onClick={undo}>
             <Undo2 />
@@ -40,18 +51,28 @@ function History() {
         </div>
       </div>
       {scramble.length > 0 && (
-        <p className="mt-2 font-mono text-xs leading-relaxed text-zinc-500">
-          <span className="mr-2 font-sans text-zinc-600">Scramble</span>
+        <p className="mt-2 font-mono text-xs leading-relaxed text-muted">
+          <span className="mr-2 text-[10px] tracking-[0.14em] text-faint uppercase">Scramble</span>
           {scramble.map((move) => move.notation).join(' ')}
         </p>
       )}
       {history.length === 0 ? (
-        <p className="mt-2 text-xs text-zinc-600">No moves yet. Press R, U or F, or drag a face of the cube.</p>
+        <p className="mt-2.5 rounded-lg border border-dotted border-white/20 px-3 py-3 text-xs leading-relaxed text-muted">
+          No moves yet. Press R, U or F, or drag a face of the cube.
+        </p>
       ) : (
-        <ol ref={list} className="mt-2 flex max-h-44 flex-wrap gap-x-2 gap-y-1 overflow-y-auto font-mono text-[13px]">
-          {hidden > 0 && <li className="text-zinc-600">+{hidden} earlier</li>}
-          {history.slice(-HISTORY_SHOWN).map((move, i, shown) => (
-            <li key={hidden + i} className={i === shown.length - 1 ? 'text-zinc-50' : 'text-zinc-500'}>
+        <ol ref={list} className="mt-2.5 flex max-h-44 flex-wrap gap-1 overflow-y-auto p-0.5">
+          {hidden > 0 && <li className="flex h-6 items-center px-1 font-mono text-xs text-faint">+{hidden} earlier</li>}
+          {shown.map((move, i) => (
+            <li
+              key={hidden + i}
+              data-sticker={faces[i] ?? 'n'}
+              data-lit=""
+              className={cx(
+                'chip h-6 min-w-6 rounded-[5px] px-1 text-xs',
+                i === shown.length - 1 ? 'outline-2 outline-offset-1 outline-zinc-50' : 'opacity-75',
+              )}
+            >
               {move.notation}
             </li>
           ))}
@@ -97,12 +118,12 @@ export function PlaygroundPanel() {
   };
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-dotted divide-white/20">
       <section aria-label="Algorithm" className="px-4 py-4">
         <div className="flex items-baseline justify-between">
           <Label>Algorithm</Label>
           {parsed.ok && (
-            <span className="font-mono text-xs text-zinc-500">
+            <span className="font-mono text-xs text-muted">
               {moves.length} {moves.length === 1 ? 'move' : 'moves'}
             </span>
           )}
@@ -125,23 +146,23 @@ export function PlaygroundPanel() {
             execute();
           }}
           className={cx(
-            'mt-2.5 block w-full resize-none rounded-md border bg-base px-3 py-2 font-mono text-sm leading-relaxed text-zinc-50 placeholder:text-zinc-700 focus:outline-none',
-            parsed.ok ? 'border-line focus:border-zinc-500' : 'border-red-500/60',
+            'mt-2.5 block w-full resize-none rounded-lg border bg-base px-3 py-2.5 font-mono text-[15px] leading-relaxed tracking-wide text-zinc-50 caret-accent placeholder:text-zinc-700 focus:outline-none',
+            parsed.ok ? 'border-line focus:border-accent' : 'border-cube-red/70',
           )}
         />
         {!parsed.ok && (
           <div id="algorithm-error" role="alert" className="mt-2 text-xs leading-relaxed">
-            <p className="text-red-300">
-              {parsed.error.message} <span className="text-red-300/60">(character {parsed.error.index + 1})</span>
+            <p className="text-cube-red">
+              {parsed.error.message} <span className="opacity-70">(character {parsed.error.index + 1})</span>
             </p>
-            <code className="mt-1 block truncate font-mono text-zinc-500">
+            <code className="mt-1 block truncate font-mono text-muted">
               {input.slice(0, parsed.error.index)}
-              <mark className="rounded-sm bg-red-500/30 px-px text-red-100">{input[parsed.error.index] ?? ' '}</mark>
+              <mark className="rounded-sm bg-cube-red px-px text-ink">{input[parsed.error.index] ?? ' '}</mark>
               {input.slice(parsed.error.index + 1)}
             </code>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5 pb-1">
           <Button variant="primary" disabled={moves.length === 0} onClick={execute}>
             <Play />
             Execute
@@ -155,7 +176,7 @@ export function PlaygroundPanel() {
             {copied ? 'Copied' : 'Copy'}
           </Button>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+        <p className="mt-3 text-xs leading-relaxed text-muted">
           Faces R L U D F B, slices M E S, wide r or Rw, rotations x y z. Add ' to reverse, 2 to double, and (R U)3 to
           repeat.
         </p>

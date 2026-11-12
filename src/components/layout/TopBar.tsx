@@ -27,10 +27,14 @@ export function TopBar() {
   const scramble = () => (view === 'timer' ? useTimer.getState().newScramble() : useCube.getState().scrambleCube());
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
+    <header className="tile flex h-12 shrink-0 items-center gap-3 px-3">
       <Logo className="md:hidden" />
+      <span className="display hidden text-[23px] text-zinc-50 xl:block">
+        TWIST<span className="text-accent">LAB</span>
+      </span>
+      <span aria-hidden="true" className="hidden h-5 border-l border-dotted border-white/35 xl:block" />
       <h1 className="min-w-0 truncate text-sm font-medium text-zinc-50">{PUZZLES[puzzleId].name}</h1>
-      <div role="radiogroup" aria-label="Puzzle" className="flex shrink-0 rounded-md border border-line p-0.5">
+      <div role="radiogroup" aria-label="Puzzle" className="flex shrink-0 gap-0.5 rounded-lg bg-base p-0.5 shadow-[inset_0_0_0_1px_#ffffff17]">
         {(Object.keys(PUZZLES) as PuzzleId[]).map((id) => (
           <button
             key={id}
@@ -40,8 +44,8 @@ export function TopBar() {
             aria-label={PUZZLES[id].name}
             onClick={() => useCube.getState().setPuzzle(id)}
             className={cx(
-              'h-6 rounded px-2 font-mono text-xs transition-colors',
-              id === puzzleId ? 'bg-white/10 text-zinc-50' : 'text-zinc-500 hover:text-zinc-200',
+              'h-7 rounded-md px-2 font-mono text-xs transition-colors',
+              id === puzzleId ? 'bg-accent font-semibold text-accent-ink' : 'text-zinc-400 hover:text-zinc-100',
             )}
           >
             {PUZZLES[id].size}×{PUZZLES[id].size}

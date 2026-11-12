@@ -4,16 +4,20 @@ import { PUZZLES, UPCOMING, type PuzzleId } from '../engine/puzzles';
 import { useCube } from '../store/cubeStore';
 import { useSettings } from '../store/settingsStore';
 
-/** An n×n face, as a small picture of the puzzle. */
-function Glyph({ size }: { size: number }) {
+/** An n×n face as a small picture of the puzzle, its stickers taken in turn from the six colours. */
+function Glyph({ size, lit }: { size: number; lit: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-9 shrink-0 gap-0.5 rounded-md bg-white/[0.05] p-1.5"
+      className="grid size-11 shrink-0 gap-[3px] rounded-lg bg-base p-[5px]"
       style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
     >
       {Array.from({ length: size * size }, (_, i) => (
-        <span key={i} className="rounded-[1px] bg-zinc-300" />
+        <span
+          key={i}
+          data-sticker={(i * 5 + size) % 6}
+          className={cx('rounded-[2px] bg-(--sticker) transition-opacity', !lit && 'opacity-40')}
+        />
       ))}
     </span>
   );
@@ -28,10 +32,10 @@ export function LibraryPanel() {
   };
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-dotted divide-white/20">
       <section className="px-4 py-4">
-        <Label>Puzzle Library</Label>
-        <ul className="mt-3 space-y-1.5">
+        <Label>Ready to play</Label>
+        <ul className="mt-3 space-y-2.5">
           {(Object.keys(PUZZLES) as PuzzleId[]).map((id) => {
             const active = id === puzzleId;
             return (
@@ -41,16 +45,23 @@ export function LibraryPanel() {
                   aria-current={active ? 'true' : undefined}
                   onClick={() => open(id)}
                   className={cx(
-                    'flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors',
-                    active ? 'border-accent/40 bg-accent/[0.06]' : 'border-line hover:bg-white/[0.04]',
+                    'key group flex w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-3 text-left',
+                    active ? 'border-accent bg-accent/[0.12]' : 'border-transparent bg-raised hover:bg-[#282a30]',
                   )}
                 >
-                  <Glyph size={PUZZLES[id].size} />
+                  <Glyph size={PUZZLES[id].size} lit={active} />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-zinc-50">{PUZZLES[id].name}</span>
-                    <span className="block text-xs text-zinc-500">{PUZZLES[id].summary}</span>
+                    <span className="block text-sm font-semibold text-zinc-50">{PUZZLES[id].name}</span>
+                    <span className="block text-xs text-muted">{PUZZLES[id].summary}</span>
                   </span>
-                  <span className={cx('text-xs', active ? 'text-accent' : 'text-zinc-500')}>{active ? 'Active' : 'Open'}</span>
+                  <span
+                    className={cx(
+                      'font-mono text-[10px] font-semibold tracking-[0.14em] uppercase',
+                      active ? 'text-accent' : 'text-muted group-hover:text-zinc-200',
+                    )}
+                  >
+                    {active ? 'Active' : 'Open'}
+                  </span>
                 </button>
               </li>
             );
@@ -60,21 +71,21 @@ export function LibraryPanel() {
 
       <section className="px-4 py-4">
         <Label>Coming soon</Label>
-        <ul className="mt-3 space-y-1.5">
+        <ul className="mt-3 space-y-2">
           {UPCOMING.map((puzzle) => (
-            <li key={puzzle.name} className="flex items-center gap-3 rounded-lg border border-dashed border-line px-3 py-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white/[0.03] text-zinc-600">
-                <Lock size={14} />
+            <li key={puzzle.name} className="flex items-center gap-3 rounded-xl border border-dotted border-white/20 px-3 py-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-faint">
+                <Lock size={15} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-medium text-zinc-500">{puzzle.name}</span>
-                <span className="block text-xs text-zinc-600">{puzzle.summary}</span>
+                <span className="block font-medium text-zinc-400">{puzzle.name}</span>
+                <span className="block text-xs text-faint">{puzzle.summary}</span>
               </span>
-              <span className="text-[11px] text-zinc-600">Not yet available</span>
+              <span className="text-[11px] text-faint">Not yet available</span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+        <p className="mt-3 text-xs leading-relaxed text-muted">
           Each puzzle is an engine plus a 3D model behind one interface, so playback, history and the timer work with a
           new puzzle as they are.
         </p>

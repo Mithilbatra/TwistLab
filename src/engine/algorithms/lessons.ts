@@ -1,4 +1,4 @@
-import { applyMoves, centreFrame, type CubeState } from '../core/CubeState';
+import { applyMoves, centreFrame, turnedFaces, type CubeState } from '../core/CubeState';
 import { sameValues, transform, type Vec3 } from '../core/math';
 import { invertMoves, type Move } from '../core/Move';
 import { PUZZLES } from '../puzzles';
@@ -16,6 +16,12 @@ export const HOLD = parse3x3('z2');
 
 /** The position an algorithm solves: the held cube with the algorithm undone. */
 export const demoSetup = (algorithm: readonly Move[]): Move[] => [...HOLD, ...invertMoves(algorithm)];
+
+/** An algorithm as the library draws it: its moves, and the colour of the face each one turns when its demo plays. */
+export function demoStrip(algorithm: string): { moves: Move[]; faces: (number | null)[] } {
+  const moves = parse3x3(algorithm);
+  return { moves, faces: turnedFaces(applyMoves(cube.createSolved(), demoSetup(moves)), moves, 3) };
+}
 
 /**
  * Which layer-by-layer stage solves a piece, from where it lives in the solved cube.
