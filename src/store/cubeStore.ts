@@ -30,7 +30,8 @@ interface CubeStore {
   /** Ids of cubies to grey out, used by lessons to focus on one stage. */
   dimmed: ReadonlySet<number> | null;
   setPuzzle(id: PuzzleId): void;
-  turn(moves: readonly Step[]): void;
+  /** Makes the moves, or none of them if the puzzle refuses one (a Square-1 slash with a piece in the way). */
+  turn(moves: readonly Step[]): boolean;
   undo(): void;
   redo(): void;
   /** Replaces the cube with solved + `setup`, without animation, and clears the history. */
@@ -41,6 +42,17 @@ interface CubeStore {
 }
 
 export const currentPuzzle = (): AnyPuzzle => puzzleOf(useCube.getState().puzzleId);
+
+/** The first of `moves`, made in turn from `state`, that the puzzle refuses, and why. Null when it takes them all. */
+export function firstBlocked(puzzle: AnyPuzzle, state: Opaque, moves: readonly Step[]): { index: number; reason: string } | null {
+  if (!puzzle.blocked) return null;
+  for (const [index, move] of moves.entries()) {
+    const reason = puzzle.blocked(state, move);
+    if (reason) return { index, reason };
+    state = puzzle.apply(state, move);
+  }
+  return null;
+}
 
 export const useCube = create<CubeStore>()((set, get) => {
   /** Applies moves to the logical state right away and queues the matching animations. */
@@ -75,9 +87,10 @@ export const useCube = create<CubeStore>()((set, get) => {
     },
 
     turn: (moves) => {
-      if (moves.length === 0) return;
+      if (moves.length === 0 || firstBlocked(currentPuzzle(), get().state, moves)) return false;
       const next = advance(moves);
       set((s) => ({ ...next, history: [...s.history, ...moves], future: [] }));
+      return true;
     },
 
     // Undo plays the exact inverse turn. The engine is integer-only, so this restores the previous state bit for bit.

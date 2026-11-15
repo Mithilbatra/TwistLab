@@ -1,6 +1,8 @@
 import type { V3 } from '../core/geometry';
+import { CLOCK } from './clock';
 import { createCubePuzzle } from './cubePuzzle';
 import type { Puzzle, PuzzleInfo } from './PuzzleEngine';
+import { SQUARE1 } from './square1';
 import { createTwistPuzzle, type TwistDef } from './twistPuzzle';
 
 /** Sticker colours by number. The first six are a cube's, in the engine's face order: right, left, up, down, front, back. */
@@ -227,6 +229,8 @@ export const PUZZLES = {
   pyraminx: createTwistPuzzle(PYRAMINX),
   skewb: createTwistPuzzle(SKEWB),
   megaminx: createTwistPuzzle(MEGAMINX),
+  square1: SQUARE1,
+  clock: CLOCK,
   mirror: createTwistPuzzle(MIRROR),
   mirror2x2: createTwistPuzzle(MIRROR_2X2),
   fisher: createTwistPuzzle(FISHER),
@@ -248,8 +252,6 @@ export const puzzleOf = (id: PuzzleId): AnyPuzzle => PUZZLES[id];
 
 /** Puzzles the library lists but cannot play yet. Each needs mechanics of its own before it moves up. */
 export const COMING_SOON: readonly PuzzleInfo[] = [
-  { name: 'Square-1', category: 'WCA Puzzles', difficulty: 4, summary: 'Changes shape as it turns, and has to be squared up before it can be solved.' },
-  { name: "Rubik's Clock", category: 'WCA Puzzles', difficulty: 2, summary: 'Eighteen dials, set by four wheels and four pins.' },
   { name: 'Windmill Cube', category: 'Shape Mods', difficulty: 3, summary: 'A 3×3 cut on a slant, so the top looks like a pinwheel.' },
   { name: 'Axis Cube', category: 'Shape Mods', difficulty: 4, summary: 'A 3×3 that turns about axes through its edges and loses its shape at once.' },
   { name: 'Mastermorphix', category: 'Shape Mods', difficulty: 4, summary: 'A 3×3 in the shape of a rounded tetrahedron.' },

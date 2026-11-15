@@ -55,8 +55,11 @@ export interface PieceModel<S, M> {
   readonly pieces: readonly PieceMesh[];
   /** Rotation (row-major 3×3) that carries piece `i` from its solved place to where `state` has it. */
   pose(state: S, i: number): readonly number[];
-  /** The rigid turn `move` makes from `state`: about which axis, by what angle, and which pieces ride on it. */
-  turning(state: S, move: M): { axis: V3; angle: number; moving: readonly boolean[] };
+  /**
+   * The rigid turns `move` makes from `state`: about which axis, by what angle, and which pieces ride on each.
+   * Usually one; a Square-1 turns its top and bottom layers at once.
+   */
+  turning(state: S, move: M): readonly { axis: V3; angle: number; moving: readonly boolean[] }[];
   /** The turns that would take piece `i` with them: each one's axis, and the move for a turn either way about it. */
   grips(state: S, i: number): { axis: V3; turn(direction: 1 | -1): M }[];
 }
@@ -69,8 +72,15 @@ export interface Puzzle<S, M extends { readonly notation: string }> extends Puzz
   readonly help: string;
   /** What the move keys turn on this puzzle, where that is not a cube's faces. */
   readonly moveNames?: Readonly<Record<string, string>>;
-  /** A plain cube has a model of its own (rounded cubies); everything else is drawn piece by piece. */
-  readonly model: { readonly kind: 'cube' } | PieceModel<S, M>;
+  /** The notation a move key stands for (`U`, or `U'` with Shift), where the puzzle does not name its moves by letter. */
+  readonly keys?: Readonly<Record<string, string>>;
+  /** Why `move` cannot be made from `state`, if it cannot. Only puzzles whose moves can jam need this. */
+  blocked?(state: S, move: M): string | null;
+  /**
+   * A plain cube has a model of its own (rounded cubies), and so does the Clock (dials on two faces).
+   * Everything else is drawn piece by piece.
+   */
+  readonly model: { readonly kind: 'cube' } | { readonly kind: 'clock' } | PieceModel<S, M>;
   /** For each move of a sequence played from `start`: the colour (0 to 5) of the face it turns, or null if it turns no one face. */
   faces(start: S, moves: readonly M[]): (number | null)[];
 }

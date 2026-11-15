@@ -45,7 +45,7 @@ const model = (puzzle: TwistPuzzle) => {
 };
 /** How many pieces a turn carries. */
 const carried = (puzzle: TwistPuzzle, move: string) =>
-  model(puzzle).turning(puzzle.createSolved(), moves(puzzle, move)[0]).moving.filter(Boolean).length;
+  model(puzzle).turning(puzzle.createSolved(), moves(puzzle, move)[0])[0].moving.filter(Boolean).length;
 /** How many colours each piece shows, read off its mesh. Hidden pieces show none. */
 const colours = (puzzle: TwistPuzzle) => model(puzzle).pieces.map((piece) => new Set(piece.tags.filter((tag) => tag >= 0)).size);
 const piecesWith = (puzzle: TwistPuzzle, count: number) => colours(puzzle).flatMap((shown, i) => (shown === count ? [i] : []));
@@ -176,7 +176,7 @@ describe('Pyraminx', () => {
     expect(reach(pyraminx, 'U L R B', piecesWith(pyraminx, 2))).toBe(11_520);
     // Each tip turns three ways on its own, and so does each centre under it.
     expect(reach(pyraminx, 'u l r b', pyraminx.createSolved().map((_, i) => i))).toBe(81);
-    const tips = [...'ulrb'].map((tip) => model(pyraminx).turning(pyraminx.createSolved(), moves(pyraminx, tip)[0]).moving.indexOf(true));
+    const tips = [...'ulrb'].map((tip) => model(pyraminx).turning(pyraminx.createSolved(), moves(pyraminx, tip)[0])[0].moving.indexOf(true));
     expect(reach(pyraminx, 'U L R B', piecesWith(pyraminx, 3).filter((i) => !tips.includes(i)))).toBe(81);
   });
 
@@ -248,7 +248,7 @@ describe('Megaminx', () => {
 describe('Dino Cube', () => {
   it('is twelve edges that turn in threes', () => {
     expect(tally(dino)).toEqual([9, 0, 12, 0]);
-    expect(model(dino).turning(dino.createSolved(), moves(dino, 'UFR')[0]).moving.filter((on, i) => on && colours(dino)[i] > 0)).toHaveLength(3);
+    expect(model(dino).turning(dino.createSolved(), moves(dino, 'UFR')[0])[0].moving.filter((on, i) => on && colours(dino)[i] > 0)).toHaveLength(3);
     expect(order(dino, 'UFR')).toBe(3);
     expect(run(dino, 'UFR DBL')).toEqual(run(dino, 'DBL UFR')); // opposite corners share nothing
     expect(run(dino, 'UFR UFL')).not.toEqual(run(dino, 'UFL UFR'));
@@ -269,7 +269,7 @@ describe('Redi Cube', () => {
   it('turns a corner with its three edges, and never the centres', () => {
     const [core] = piecesWith(redi, 6);
     for (const corner of ['UFR', 'UFL', 'UBR', 'UBL', 'DFR', 'DFL', 'DBR', 'DBL']) {
-      const { moving } = model(redi).turning(redi.createSolved(), moves(redi, corner)[0]);
+      const [{ moving }] = model(redi).turning(redi.createSolved(), moves(redi, corner)[0]);
       expect(moving.filter(Boolean), corner).toHaveLength(4);
       expect(moving[core], corner).toBe(false);
     }
@@ -339,7 +339,7 @@ describe('dragging', () => {
     expect(piecesWith(megaminx, 3).map((i) => grips(megaminx, i).length)).toEqual(Array(20).fill(3));
     expect(piecesWith(mirror, 1).map((i) => grips(mirror, i).length)).toEqual(Array(26).fill(3));
     // A Pyraminx tip is dragged on its own: the tip turn, not the corner turn that would also carry it.
-    const tip = model(pyraminx).turning(pyraminx.createSolved(), moves(pyraminx, 'u')[0]).moving.indexOf(true);
+    const tip = model(pyraminx).turning(pyraminx.createSolved(), moves(pyraminx, 'u')[0])[0].moving.indexOf(true);
     expect(grips(pyraminx, tip).map((grip) => grip.turn(-1).notation)).toEqual(['u']);
     expect(grips(pyraminx, tip)[0].turn(1).notation).toBe("u'");
   });

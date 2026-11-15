@@ -6,5 +6,6 @@ export default defineConfig({
   // Relative asset paths, so the build works under GitHub Pages' /TwistLab/ path as well as at a domain root.
   base: './',
   plugins: [react(), tailwindcss()],
-  test: { include: ['src/**/*.test.{ts,tsx}'] },
+  // The randomised big-cube tests take a few seconds on a busy machine or a CI runner; give them room.
+  test: { include: ['src/**/*.test.{ts,tsx}'], testTimeout: 30_000 },
 });

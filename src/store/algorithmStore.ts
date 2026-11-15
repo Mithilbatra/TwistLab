@@ -81,14 +81,14 @@ export const useAlgorithm = create<AlgorithmStore>()(
       next: () => {
         const { moves, index } = get();
         if (index >= moves.length) return;
-        useCube.getState().turn([moves[index]]);
+        // The puzzle refused the move: it was turned some other way since the sequence started.
+        if (!useCube.getState().turn([moves[index]])) return get().pause();
         set({ index: index + 1 });
       },
 
       previous: () => {
         const { moves, index } = get();
-        if (index === 0) return;
-        useCube.getState().turn([currentPuzzle().invert(moves[index - 1])]);
+        if (index === 0 || !useCube.getState().turn([currentPuzzle().invert(moves[index - 1])])) return;
         set({ index: index - 1 });
       },
 
@@ -96,7 +96,8 @@ export const useAlgorithm = create<AlgorithmStore>()(
         const { moves, index, setup } = get();
         run++;
         if (setup) useCube.getState().load(setup);
-        else useCube.getState().turn(moves.slice(0, index).reverse().map(currentPuzzle().invert));
+        else if (index > 0 && !useCube.getState().turn(moves.slice(0, index).reverse().map(currentPuzzle().invert)))
+          return set({ playing: false });
         set({ index: 0, playing: false });
       },
 

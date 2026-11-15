@@ -153,7 +153,7 @@ test('switches to the 2×2 and uses only the moves it has', async ({ page }) => 
   // The library lists every puzzle by category. Choosing one puts it on the stage; Play opens the playground.
   await page.getByRole('button', { name: 'Puzzle Library' }).click();
   await expect(page.getByRole('region', { name: 'Classic Cubes' })).toContainText('6 of 6 playable');
-  await expect(page.getByText('Coming soon')).toHaveCount(10);
+  await expect(page.getByText('Coming soon')).toHaveCount(8);
   await page.getByRole('button', { name: /3×3 Rubik's Cube/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText("3×3 Rubik's Cube");
   await expect(status(page)).toHaveText('Solved');
@@ -221,6 +221,45 @@ test('plays a puzzle that is not a cube: turns in thirds, tips, and solved by it
   await expect(page.getByTestId('current-move')).toHaveText('D--');
   await algorithmField(page).fill('F5');
   await expect(page.getByRole('alert')).toContainText('comes back round after 5');
+});
+
+test("plays a Square-1 and a Rubik's Clock by their own rules", async ({ page }) => {
+  await choosePuzzle(page, 'Square-1');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Square-1');
+  // A slash with a corner across the cut is refused before anything runs.
+  await algorithmField(page).fill('(-1,0)/');
+  await expect(page.getByRole('alert')).toContainText('Move 2, /, cannot be made from this position');
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeDisabled();
+  await algorithmField(page).fill('(1,0)/');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('2 / 2');
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.getByRole('button', { name: 'Back to start' }).click();
+  await expect(status(page)).toHaveText('Solved');
+  // U turns the top a twelfth, / turns the right half over, and Shift reverses.
+  await page.keyboard.press('u');
+  await expect(page.getByTestId('current-move')).toHaveText('(1,0)');
+  await page.keyboard.press('/');
+  await expect(page.getByTestId('current-move')).toHaveText('/');
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.keyboard.press('/');
+  await page.keyboard.press('Shift+U');
+  await expect(page.getByTestId('current-move')).toHaveText('(-1,0)');
+  await expect(status(page)).toHaveText('Solved');
+
+  await choosePuzzle(page, "Rubik's Clock");
+  await algorithmField(page).fill('UR3+ y2 UL1- y2');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('4 / 4');
+  await expect(moveCount(page)).toHaveText('2'); // turning it over is not a move
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.getByRole('button', { name: 'Reverse' }).click();
+  await expect(algorithmField(page)).toHaveValue('y2 UL1+ y2 UR3-');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('4 / 4');
+  await expect(status(page)).toHaveText('Solved');
+  await page.keyboard.press('y');
+  await expect(page.getByTestId('current-move')).toHaveText('y2');
 });
 
 test('solves a shape mod by shape, and turns its pieces by dragging', async ({ page }) => {
