@@ -54,10 +54,14 @@ function onKeyDown(event: KeyboardEvent) {
   }
 
   if (event.repeat || !canTurn(view)) return;
-  const family = Object.keys(keymap).find((name) => keymap[name] === key);
+  // The slash key is the Square-1's slash. Every other move key goes through the key map, and then through the
+  // puzzle's own keys where it does not name its moves by letter.
+  const family = key === '/' ? '/' : Object.keys(keymap).find((name) => keymap[name] === key);
   if (!family) return;
   const wide = event.altKey && 'RLUDFB'.includes(family);
-  const parsed = currentPuzzle().parse((wide ? family.toLowerCase() : family) + (event.shiftKey ? "'" : ''));
+  const written = (wide ? family.toLowerCase() : family) + (event.shiftKey && family !== '/' ? "'" : '');
+  const puzzle = currentPuzzle();
+  const parsed = puzzle.parse(puzzle.keys?.[written] ?? written);
   if (!parsed.ok) return; // this puzzle has no such move (M on a 2×2)
   event.preventDefault();
   cube.turn(parsed.moves);

@@ -14,7 +14,6 @@ const plastic = new MeshStandardMaterial({ vertexColors: true, roughness: 0.5, m
 
 // Scratch objects reused every frame, so animating allocates nothing.
 const scratchMatrix = new Matrix4();
-const spin = new Quaternion();
 
 /** A puzzle's rotations as quaternions, converted once each and then reused. */
 const quaternions = new WeakMap<readonly number[], Quaternion>();
@@ -59,14 +58,25 @@ export function PieceModel({ model }: { model: Model<any, any> }) {
   // The canvas only renders on demand: wake it whenever a turn is queued or the puzzle is replaced.
   useEffect(() => animation.subscribe(() => invalidate()), [invalidate]);
 
-  // What the turn in progress does, worked out once when it starts rather than every frame.
-  const turning = useRef<{ turn: object; axis: Vector3; angle: number; moving: readonly boolean[] } | null>(null);
+  // What the turn in progress does, worked out once when it starts rather than every frame: each rigid part of it
+  // (a Square-1 turns two layers at once), the part each piece rides on (-1 for none), and the widest angle.
+  const turning = useRef<{
+    turn: object;
+    parts: { axis: Vector3; angle: number; spin: Quaternion }[];
+    partOf: number[];
+    widest: number;
+  } | null>(null);
   const describe = () => {
     const turn = animation.current;
     if (!turn) return null;
     if (turning.current?.turn !== turn) {
-      const { axis, angle, moving } = model.turning(turn.from, turn.move);
-      turning.current = { turn, axis: new Vector3(...axis), angle, moving };
+      const parts = model.turning(turn.from, turn.move);
+      turning.current = {
+        turn,
+        parts: parts.map(({ axis, angle }) => ({ axis: new Vector3(...axis), angle, spin: new Quaternion() })),
+        partOf: geometries.map((_, i) => parts.findIndex((part) => part.moving[i])),
+        widest: Math.max(0, ...parts.map((part) => Math.abs(part.angle))),
+      };
     }
     return turning.current;
   };
@@ -76,18 +86,19 @@ export function PieceModel({ model }: { model: Model<any, any> }) {
     if (before) {
       const { speed } = useSettings.getState();
       // A quarter turn takes TURN_SECONDS, a half turn half as long again; a backlog plays faster.
-      const seconds = (TURN_SECONDS * (0.5 + Math.abs(before.angle) / Math.PI)) / (speed * (1 + animation.backlog * 0.6));
+      const seconds = (TURN_SECONDS * (0.5 + before.widest / Math.PI)) / (speed * (1 + animation.backlog * 0.6));
       animation.tick(Math.min(delta, 1 / 30) / seconds);
     }
 
     const turn = describe();
     const state = animation.current ? animation.current.from : animation.displayed;
-    if (turn) spin.setFromAxisAngle(turn.axis, easeInOut(animation.progress) * turn.angle);
+    for (const part of turn?.parts ?? []) part.spin.setFromAxisAngle(part.axis, easeInOut(animation.progress) * part.angle);
     for (let i = 0; i < geometries.length; i++) {
       const mesh = meshes.current[i];
       if (!mesh) continue;
       mesh.quaternion.copy(quaternionOf(model.pose(state, i)));
-      if (turn?.moving[i]) mesh.quaternion.premultiply(spin);
+      const part = turn ? turn.partOf[i] : -1;
+      if (part >= 0) mesh.quaternion.premultiply(turn!.parts[part].spin);
     }
     if (animation.busy) frame.invalidate();
   });

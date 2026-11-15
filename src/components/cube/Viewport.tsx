@@ -8,6 +8,7 @@ import type { CubePuzzle } from '../../engine/puzzles/cubePuzzle';
 import { useCube } from '../../store/cubeStore';
 import { canTurn, LIMITS, useSettings } from '../../store/settingsStore';
 import { cx, IconButton } from '../ui/ui';
+import { ClockModel } from './ClockModel';
 import { CubeModel } from './CubeModel';
 import { PieceModel } from './PieceModel';
 
@@ -133,9 +134,11 @@ function Scene() {
         <Lightformer form="rect" intensity={0.9} position={[7, 2, -3]} scale={[9, 5, 1]} target={[0, 0, 0]} />
         <Lightformer form="ring" intensity={1.6} position={[3, 3, 8]} scale={2.5} target={[0, 0, 0]} />
       </Environment>
-      {/* A plain cube has a model of its own, with rounded cubies. Every other puzzle is drawn from its own pieces. */}
+      {/* A plain cube has a model of its own, with rounded cubies, and so does the Clock. Every other puzzle is drawn from its own pieces. */}
       {puzzle.model.kind === 'cube' ? (
         <CubeModel key={puzzleId} puzzle={puzzle as CubePuzzle} />
+      ) : puzzle.model.kind === 'clock' ? (
+        <ClockModel key={puzzleId} />
       ) : (
         <PieceModel key={puzzleId} model={puzzle.model} />
       )}

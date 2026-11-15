@@ -84,7 +84,7 @@ const MARGIN = 0.05;
 const ROUND = 0.07;
 
 /** A piece as triangles: its body drawn slightly small, and a sticker standing proud of it on each outer face. */
-function meshOf(cell: Solid, unitSize: number): PieceMesh {
+export function meshOf(cell: Solid, unitSize: number): PieceMesh {
   const positions: number[] = [];
   const tags: number[] = [];
   const fan = (points: readonly V3[], tag: number) => {
@@ -284,7 +284,7 @@ export function createTwistPuzzle(def: TwistDef): TwistPuzzle {
     pose: (state, i) => rots[state[i]],
     turning: (state, move) => {
       const { dir, order } = axes[named[move.name].axis];
-      return { axis: dir, angle: (-2 * Math.PI * move.turns) / order, moving: riders(state, move.name) };
+      return [{ axis: dir, angle: (-2 * Math.PI * move.turns) / order, moving: riders(state, move.name) }];
     },
     grips: (state, i) => {
       // Of the turns about one line that take this piece, the one that takes the fewest pieces with it.

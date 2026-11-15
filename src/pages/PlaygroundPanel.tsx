@@ -4,7 +4,7 @@ import { Transport } from '../components/algorithm/Transport';
 import { Button, cx, IconButton, Label } from '../components/ui/ui';
 import { puzzleOf } from '../engine/puzzles';
 import { useAlgorithm } from '../store/algorithmStore';
-import { useCube } from '../store/cubeStore';
+import { firstBlocked, useCube } from '../store/cubeStore';
 
 /** Moves shown in the history list. Older ones are counted, not rendered. */
 const HISTORY_SHOWN = 240;
@@ -89,10 +89,16 @@ export function PlaygroundPanel() {
   const field = useRef<HTMLTextAreaElement>(null);
   const [copied, setCopied] = useState(false);
   const moves = parsed.ok ? parsed.moves : [];
+  const state = useCube((s) => s.state);
+  const playing = useAlgorithm((s) => s.playing);
+  // A Square-1 slash can jam, so check the whole algorithm against the position it would start from.
+  // Not while a sequence plays: the position changes under it at every step.
+  const blocked = useMemo(() => (playing ? null : firstBlocked(puzzle, state, moves)), [playing, puzzle, state, moves]);
+  const runnable = moves.length > 0 && !blocked;
 
-  // Only a fully valid algorithm reaches the cube.
+  // Only a fully valid algorithm, every move of which the puzzle can make, reaches the puzzle.
   const execute = () => {
-    if (moves.length === 0) return;
+    if (!runnable) return;
     const playback = useAlgorithm.getState();
     playback.open(moves);
     void playback.play();
@@ -135,8 +141,8 @@ export function PlaygroundPanel() {
           autoCapitalize="off"
           autoCorrect="off"
           aria-label="Algorithm"
-          aria-invalid={!parsed.ok}
-          aria-describedby={parsed.ok ? undefined : 'algorithm-error'}
+          aria-invalid={!parsed.ok || blocked !== null}
+          aria-describedby={parsed.ok && !blocked ? undefined : 'algorithm-error'}
           placeholder="R U R' U'"
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
@@ -146,7 +152,7 @@ export function PlaygroundPanel() {
           }}
           className={cx(
             'mt-2.5 block w-full resize-none rounded-lg border bg-base px-3 py-2.5 font-mono text-[15px] leading-relaxed tracking-wide text-zinc-50 caret-accent placeholder:text-zinc-700 focus:outline-none',
-            parsed.ok ? 'border-line focus:border-accent' : 'border-cube-red/70',
+            parsed.ok && !blocked ? 'border-line focus:border-accent' : 'border-cube-red/70',
           )}
         />
         {!parsed.ok && (
@@ -161,8 +167,13 @@ export function PlaygroundPanel() {
             </code>
           </div>
         )}
+        {blocked && (
+          <p id="algorithm-error" role="alert" className="mt-2 text-xs leading-relaxed text-cube-red">
+            Move {blocked.index + 1}, {moves[blocked.index].notation}, cannot be made from this position: {blocked.reason}.
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-1.5 pb-1">
-          <Button variant="primary" disabled={moves.length === 0} onClick={execute}>
+          <Button variant="primary" disabled={!runnable} onClick={execute}>
             <Play />
             Execute
           </Button>

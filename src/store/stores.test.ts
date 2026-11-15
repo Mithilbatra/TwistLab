@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyMoves, type CubeState } from '../engine/core/CubeState';
 import type { Move } from '../engine/core/Move';
-import { PUZZLES } from '../engine/puzzles';
+import { PUZZLES, puzzleOf } from '../engine/puzzles';
 import { averageOf, formatTime, histogram } from '../utils/stats';
 import { useAlgorithm } from './algorithmStore';
 import { animation, useCube } from './cubeStore';
@@ -122,7 +122,7 @@ describe('cube store and its animation', () => {
   it('switches puzzle in one step, never pairing a puzzle with the wrong cubies', () => {
     const seen: number[] = [];
     const unsubscribe = useCube.subscribe((s) => {
-      expect(s.state).toHaveLength(PUZZLES[s.puzzleId].createSolved().length);
+      expect(s.state).toHaveLength(puzzleOf(s.puzzleId).createSolved().length);
       seen.push(s.state.length);
     });
     useCube.getState().turn(moves('R'));

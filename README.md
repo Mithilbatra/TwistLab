@@ -8,13 +8,13 @@
   <a href="https://mithilbatra.github.io/TwistLab/"><b>Try it live</b></a> &nbsp;·&nbsp; runs in the browser, nothing to install &nbsp;·&nbsp; <a href="LICENSE">MIT licence</a>
 </p>
 
-An interactive 3D playground for twisty puzzles. Fifteen puzzles are playable: cubes from 2×2 to 7×7, the Pyraminx, Skewb and Megaminx, the Dino and Redi Cubes, and four shape mods. Each has its own geometry, mechanics, notation, scrambles and test for being solved. Turn them with the keyboard, by dragging a piece or with notation, run algorithms move by move, learn the beginner's method on the 3×3, and time your solves.
+An interactive 3D playground for twisty puzzles. Seventeen puzzles are playable: cubes from 2×2 to 7×7, every other WCA puzzle (the Pyraminx, Skewb, Megaminx, Square-1 and Rubik's Clock), the Dino and Redi Cubes, and four shape mods. Each has its own geometry, mechanics, notation, scrambles and test for being solved. Turn them with the keyboard, by dragging a piece or with notation, run algorithms move by move, learn the beginner's method on the 3×3, and time your solves.
 
-Ten more, from the Square-1 to the Ghost Cube, are listed in the Puzzle Library as coming soon.
+Eight more, from the Gear Cube to the Ghost Cube, are listed in the Puzzle Library as coming soon.
 
 ## Features
 
-- **Fifteen 3D puzzles**, each drawn from its own pieces. Cubes are built from rounded cubies (26 on a 3×3, 218 on a 7×7); every other puzzle is cut from its real shape by its real cuts. Studio lighting, a floor of dots and contact shadows.
+- **Seventeen 3D puzzles**, each drawn from its own pieces. Cubes are built from rounded cubies (26 on a 3×3, 218 on a 7×7), the Clock from its dials, pins and wheels, and every other puzzle is cut from its real shape by its real cuts. Studio lighting, a floor of dots and contact shadows.
 - **Puzzle Library**: every puzzle by category (Classic Cubes, WCA Puzzles, Shape Mods, Mechanical Puzzles, Advanced Puzzles), with its difficulty and a short description. Choose one to look at it on the stage from any side, then press Play to turn it.
 - **An interface made of cube parts.** The six sections are the six faces: each has a sticker colour, and that colour becomes the accent of the whole interface while the section is open. Every move is drawn as a sticker in the colour of the face it turns, so an algorithm reads as a strip of colour.
 - **Turn it** with the keyboard, by dragging a piece, or with the puzzle's own notation. Orbit, zoom, reset the camera and change the perspective.
@@ -34,6 +34,8 @@ Ten more, from the Square-1 to the Ghost Cube, are listed in the Puzzle Library 
 | Pyraminx | WCA Puzzles | Four corners in thirds; a tip can turn on its own | `U L' R b` |
 | Skewb | WCA Puzzles | Four corners in thirds, each carrying half the puzzle | `R U' L B` |
 | Megaminx | WCA Puzzles | Twelve faces in fifths | `R U2' BR DBL' R++ D--` |
+| Square-1 | WCA Puzzles | Top and bottom in twelfths, and a slash that turns the right half over when no piece is in the way | `(1,0) / (-1,-1) /` |
+| Rubik's Clock | WCA Puzzles | Dials driven by four wheels, with pins choosing which dials turn together | `UR3+ U2- ALL6+ y2` |
 | Mirror Cube, Mirror 2×2 | Shape Mods | A 3×3 or 2×2 inside blocks of different sizes; solved by shape | as a 3×3 or 2×2 |
 | Fisher Cube | Shape Mods | A 3×3 turned 45° inside its cube; solved by shape | as a 3×3 |
 | Barrel Cube | Shape Mods | A 3×3 with its four upright edges cut away; solved by shape | as a 3×3 |
@@ -42,7 +44,6 @@ Ten more, from the Square-1 to the Ghost Cube, are listed in the Puzzle Library 
 
 Coming soon:
 
-- **Square-1** and **Rubik's Clock**, the two WCA puzzles still missing. Neither is made of rotating layers: the Square-1 changes shape as it turns, and the Clock is dials set by wheels and pins. Each needs an engine of its own.
 - **Gear, Mixup and Helicopter Cubes**: geared turns, or turns that stop part-way and jumble the pieces.
 - **Ivy Cube**: its cuts are curved, and the geometric engine only cuts with planes.
 - **Windmill, Axis and Ghost Cubes, and the Mastermorphix**: 3×3 shape mods that the geometric engine can already describe. Each still needs its real proportions.
@@ -88,7 +89,7 @@ The end-to-end tests run in the Chrome already installed on your machine. To use
 | `Ctrl` / `⌘` + `Shift` + `Z`, or `Ctrl` + `Y` | Redo |
 | `Enter` in the algorithm field | Execute |
 
-On other puzzles a key turns whatever has its name: `R` `U` `L` `B` are corners on a Skewb or Pyraminx and faces on a Megaminx. Keys a puzzle has no move for do nothing, and the shortcut reference shows what each key does on the puzzle on stage. The Dino and Redi Cubes name their turns by corner (`UFR`), so they are turned by dragging or with notation.
+On other puzzles a key turns whatever has its name: `R` `U` `L` `B` are corners on a Skewb or Pyraminx and faces on a Megaminx. Keys a puzzle has no move for do nothing, and the shortcut reference shows what each key does on the puzzle on stage. On a Square-1, `U` and `D` turn the top and bottom a twelfth and `/` is the slash; on the Clock, `Y` turns it over. The Dino and Redi Cubes name their turns by corner (`UFR`), so they are turned by dragging or with notation.
 
 In the timer: hold `Space` and release to start (inspection first, if enabled), press `Space` to stop, `Esc` to cancel the attempt. Move keys are off while the timer or the Puzzle Library is open.
 
@@ -97,6 +98,7 @@ Every move key can be changed in **Settings → Keyboard**. Shortcuts never fire
 ### Mouse and touch
 
 - Drag a piece to turn it. Of the turns that would carry it, the one that moves the piece most nearly the way you dragged wins, so the layer follows the pointer as on a real puzzle.
+- On the Clock, drag a dial round to turn it an hour: a corner dial turns with its own pin up, an edge dial with the two pins beside it, the centre with all four.
 - Drag the background to orbit. Scroll or pinch to zoom. In the timer and the Puzzle Library the puzzle is only there to look at, so every drag orbits.
 - The buttons at the bottom right of the stage zoom, reset the camera and change the perspective.
 
@@ -113,7 +115,7 @@ x y z              rotations     (follow R, U and F)
 RUR'U'             spaces are optional
 ```
 
-Other puzzles keep the same grammar with their own moves, listed in the table above and under the algorithm field: a turn's amount goes after its name (`BR2'` is two fifths back), and groups and repeats work everywhere. One bad token rejects the whole algorithm, with the reason and its position. Nothing is partly executed.
+Other puzzles use their own moves, listed in the table above and under the algorithm field, mostly in the same grammar: a turn's amount goes after its name (`BR2'` is two fifths back), and groups and repeats work everywhere except on the Square-1, where brackets hold a turn, as in WCA notation. A sequence the puzzle cannot make from where it is, such as a Square-1 slash with a corner in the way, names the move that would jam and does not run. One bad token rejects the whole algorithm, with the reason and its position. Nothing is partly executed.
 
 ## Architecture
 
@@ -131,7 +133,9 @@ src/
     puzzles/
       PuzzleEngine.ts     the interface every puzzle implements, and what the library shows
       cubePuzzle.ts       n×n×n cubes, from 2×2 to 7×7
-      twistPuzzle.ts      every other puzzle, built from its geometry
+      twistPuzzle.ts      most other puzzles, built from their geometry
+      square1.ts          the Square-1: rings of slots, and a slash that can jam
+      clock.ts            Rubik's Clock: eighteen dials and four pins
       index.ts            the puzzles, their definitions, and those still to come
     animation/
       AnimationQueue.ts   sequences turn animations, framework-free
@@ -140,7 +144,7 @@ src/
       lessons.ts          lesson data, stage logic, practice generator
   store/                  Zustand stores: cube, algorithm playback, timer, settings
   hooks/useKeyboard.ts    global shortcuts
-  components/             cube (3D: CubeModel, PieceModel, Viewport), layout, algorithm, timer, statistics, ui
+  components/             cube (3D: CubeModel, PieceModel, ClockModel, Viewport), layout, algorithm, timer, statistics, ui
   pages/                  one panel per section
   utils/stats.ts          time formatting, averages, histogram
 e2e/                      Playwright tests
@@ -151,7 +155,7 @@ Data flows one way:
 ```
 key / drag / notation ──▶ cube store ──▶ engine.apply ──▶ new logical state   (synchronous, exact)
                               │
-                              └──▶ AnimationQueue { move, from, to } ──▶ CubeModel or PieceModel draws it each frame
+                              └──▶ AnimationQueue { move, from, to } ──▶ CubeModel, PieceModel or ClockModel draws it each frame
 ```
 
 ### The cube engine
@@ -201,21 +205,28 @@ The interface is built from the cube itself, in three ideas. The tokens and the 
 
 The stage behind the cube is plain HTML and CSS. The 3D canvas is transparent and sits in front of it, so the glow and the giant move letter are hidden by the cube exactly as if they were behind it. Nothing on the stage animates once it has settled, so an idle cube still costs no frames.
 
+### The Square-1 and the Clock
+
+Two WCA puzzles do not turn in layers about fixed cuts, so each has an engine of its own behind the same interface.
+
+- **Square-1** (`square1.ts`): each layer is a ring of twelve 30° slots, with corners taking two and edges one. A turn spins a ring; a slash swaps half of each ring, and is refused while a corner lies across the cut (`blocked`). The store makes all of a sequence or none of it, and the playground names the move that would jam before anything runs. The pieces are cut from a cube with the geometry module and drawn by `PieceModel`, which turns the top and bottom together.
+- **Rubik's Clock** (`clock.ts`): nine dials a side, with each corner dial sharing an axle with the corner behind it, so a corner turned forward on one face turns back on the other. Each WCA move names the pins it puts up, so the state is just the dials, plus which face is towards you. `ClockModel` draws the dials, pins and wheels.
+
 ### Adding a puzzle
 
 The stores, playback, history, timer and UI use only the `Puzzle` interface, so how much work a puzzle takes depends only on how unusual it is.
 
 - **Another cube size** is one line in `src/engine/puzzles/index.ts`: `createCubePuzzle(n, …)` builds its pieces, moves, notation, scrambles and parity rules.
 - **A puzzle made of planar cuts** is one `TwistDef` in the same file: its shape, axes, cuts, move names and scramble. The Redi Cube is fourteen lines. Its pieces, mechanics, parser, solved test and 3D model all follow from that.
-- **Anything else** (the Square-1, the Clock) implements `Puzzle<State, Move>` directly and supplies its own model, as `CubeModel` and `PieceModel` do.
+- **Anything else** implements `Puzzle<State, Move>` directly, as `square1.ts` and `clock.ts` do; a puzzle whose moves can jam adds `blocked`. Its model is `PieceModel` if its pieces turn about the centre, or a component of its own, as the Clock's is.
 
 Then move it out of `COMING_SOON`, and add its checks to `puzzles.test.ts`.
 
 ## Testing
 
 ```bash
-npm test          # 293 unit and component tests
-npm run test:e2e  # 15 end-to-end tests in a real browser
+npm test          # 309 unit and component tests
+npm run test:e2e  # 16 end-to-end tests in a real browser
 ```
 
 What is verified:
@@ -224,6 +235,8 @@ What is verified:
 - **Bigger cubes**: inner layers and deep wide turns agree with each other (`r = R 2R`, `3r = x L` on a 4×4), each size refuses the moves it does not have, scrambles use the turns and lengths competitions use, and the 4×4's edge parity is reachable while a lone corner swap is not.
 - **Every other puzzle**: each move undone by its inverse and brought back round by its order, 30 scrambles undone, 40 scrambles' worth of random turns staying valid, notation read back exactly as written, and a mesh for every piece.
 - **Known counts**: brute-force searches reach exactly the 11,520 edge arrangements of a Pyraminx, the 360 centre and 8,748 corner arrangements of a Skewb, and only the even half (60 of 120) of the ways two neighbouring corners can shuffle the edges of a Dino or Redi Cube. A Megaminx face turns 11 pieces and comes back after five; the Mirror Cube keeps the orders of a 3×3 (105 for `R U`, 1260 for `R U2 D' B D'`).
+- **Square-1**: WCA notation in and out; the slash refused exactly when a corner lies across the cut, so from a solved puzzle `(1,0)` and `(0,-1)` clear it, as WCA scrambles open; scrambles that never jam and undo exactly; every piece drawn in the slots the state gives it; and a search that reaches exactly the 170 shapes a Square-1 is known to take.
+- **Rubik's Clock**: each move turns the right dials on both faces, `y2` swaps them, scrambles follow the WCA's format and undo exactly, and the scramble's fourteen turns form a system that can be inverted mod 12, so they reach each of the 12^14 positions exactly once.
 - **Solved by shape**: the shape mods are solved however they are held, and a twisted centre counts exactly where its shape or colours give it away (on a Fisher Cube, `R U` needs 420 repeats rather than 105).
 - **Conventions**: each face turns clockwise seen from outside; slices, wide moves and rotations agree with their definitions in terms of face turns (`M = x' L' R`, `r = R M'`, …).
 - **Known results**: `R U R' U'` has order 6, `R U` has order 105 (15 on a 2×2), `R U2 D' B D'` has order 1260.
@@ -234,7 +247,7 @@ What is verified:
 - **Algorithm library**: every OLL keeps the first two layers, every PLL only permutes the last layer, all 21 PLLs have distinct effects, F2L and cross cases touch only what they should.
 - **Lessons**: each demonstration reaches its goal, practice positions keep earlier steps solved, and each situation named in the text matches the position shown.
 - **Stores and UI**: undo/redo, playback, the timer state machine, statistics, corrupt saved data, shortcuts standing down while typing, key rebinding.
-- **End to end**: keyboard turning, algorithm execution, drag-to-turn with the correct direction, scramble/reset, the 2×2, a 5×5 and a 4×4, the Pyraminx and Megaminx, a Mirror Cube solved by shape and turned by dragging, the library's look-only stage, lab and lesson demos, timer persistence across a reload, and the phone layout.
+- **End to end**: keyboard turning, algorithm execution, drag-to-turn with the correct direction, scramble/reset, the 2×2, a 5×5 and a 4×4, the Pyraminx and Megaminx, a Mirror Cube solved by shape and turned by dragging, a Square-1's jammed slash and keys, the Clock's flip and reverse, the library's look-only stage, lab and lesson demos, timer persistence across a reload, and the phone layout.
 
 Randomised tests use a seeded generator, so a failure names the seed that reproduces it.
 
@@ -246,7 +259,8 @@ There is no backend. The stores are the only place that reads or writes saved da
 
 ## Known limits
 
-- Scrambles are random-move (20 moves on a 3×3, 10 on a 2×2, up to 100 on a 7×7; the Megaminx uses the competition's row format), not WCA random-state. Random-state scrambles need a solver.
+- Scrambles are random-move (20 moves on a 3×3, 10 on a 2×2, up to 100 on a 7×7, twelve slashes on a Square-1; the Megaminx uses the competition's row format), not WCA random-state. Random-state scrambles need a solver. The Clock's are random-state already: its fourteen scramble turns reach every position equally often.
+- On the Clock only the face towards you can be dragged. Turn it over with `Y` or `y2`.
 - For puzzles other than cubes, validation checks structure only (every piece a known rotation, in a slot of its own), not every reachability rule. Their states only ever come from their own moves, so this cannot be hit in the app.
 - Shape-mod proportions are close to the real puzzles, not measured from them.
 - The timer has no +2 or DNF penalties. If inspection runs out, the solve starts.

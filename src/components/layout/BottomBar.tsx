@@ -78,7 +78,7 @@ function Shortcuts() {
             <Label className="mb-1.5">Turns</Label>
             {Object.keys(keymap).map((family) => {
               // A key works on a puzzle when the puzzle has a move of that name.
-              const has = puzzle.parse(family).ok;
+              const has = puzzle.parse(puzzle.keys?.[family] ?? family).ok;
               return (
                 <Shortcut key={family} keys={[cap(family)]} muted={!has}>
                   {puzzle.moveNames?.[family] ?? MOVE_NAMES[family]}
