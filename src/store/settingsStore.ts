@@ -17,6 +17,9 @@ export const MOVE_NAMES: Readonly<Record<string, string>> = {
 
 export const LIMITS ={ speed: [0.25, 4], inspection: [0, 60], fov: [15, 70] } as const;
 
+/** Where the puzzle on stage can be turned. The timer only previews a scramble, and the library shows a puzzle to look at. */
+export const canTurn = (view: View) => view !== 'timer' && view !== 'library';
+
 interface Settings {
   view: View;
   /** Animation speed multiplier. */

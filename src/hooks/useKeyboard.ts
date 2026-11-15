@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAlgorithm } from '../store/algorithmStore';
 import { currentPuzzle, useCube } from '../store/cubeStore';
-import { useSettings } from '../store/settingsStore';
+import { canTurn, useSettings } from '../store/settingsStore';
 import { useTimer } from '../store/timerStore';
 
 export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent);
@@ -26,7 +26,7 @@ function onKeyDown(event: KeyboardEvent) {
   if (event.metaKey || event.ctrlKey) {
     if (key !== 'z' && key !== 'y') return;
     event.preventDefault();
-    if (view === 'timer') return;
+    if (!canTurn(view)) return;
     if (key === 'y' || event.shiftKey) cube.redo();
     else cube.undo();
     return;
@@ -53,7 +53,7 @@ function onKeyDown(event: KeyboardEvent) {
     if (key === 'arrowleft' && !playback.playing) return playback.previous();
   }
 
-  if (event.repeat) return;
+  if (event.repeat || !canTurn(view)) return;
   const family = Object.keys(keymap).find((name) => keymap[name] === key);
   if (!family) return;
   const wide = event.altKey && 'RLUDFB'.includes(family);

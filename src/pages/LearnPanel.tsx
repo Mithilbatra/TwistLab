@@ -3,7 +3,7 @@ import { Check, ChevronLeft, ChevronRight, Dumbbell, Play } from 'lucide-react';
 import { Transport } from '../components/algorithm/Transport';
 import { Button, cx, Label, Stickers } from '../components/ui/ui';
 import { demoSetup, demoStrip, HOLD, laterPieces, lessonDone, LESSONS, parse3x3, practiceSetup } from '../engine/algorithms/lessons';
-import { PUZZLES } from '../engine/puzzles';
+import { puzzleOf } from '../engine/puzzles';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
 
@@ -28,7 +28,7 @@ export function LearnPanel() {
 
   // Practice is judged on the cube's real state, not on which moves were made.
   const solved = useCube((s) => practising && s.puzzleId === '3x3' && lessonDone(lesson, s.state));
-  const movesUsed = useCube((s) => s.history.filter((move) => PUZZLES[s.puzzleId].countsAsMove(move)).length);
+  const movesUsed = useCube((s) => s.history.filter((move) => puzzleOf(s.puzzleId).countsAsMove(move)).length);
   useEffect(() => {
     if (solved) useAlgorithm.getState().setLessonDone(lesson.id, true);
   }, [solved, lesson]);

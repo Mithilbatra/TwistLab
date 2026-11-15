@@ -1,21 +1,28 @@
 import { create } from 'zustand';
 import { AnimationQueue } from '../engine/animation/AnimationQueue';
-import type { CubeState } from '../engine/core/CubeState';
-import type { Move } from '../engine/core/Move';
-import { PUZZLES, type PuzzleId } from '../engine/puzzles';
+import { PUZZLES, puzzleOf, type AnyPuzzle, type PuzzleId } from '../engine/puzzles';
+
+/** A move, as far as the stores are concerned: they hand moves back to the puzzle and read only how each is written. */
+export interface Step {
+  readonly notation: string;
+}
+
+/** A puzzle's state. Every puzzle has its own kind, and only that puzzle ever looks inside one. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Opaque = any;
 
 /** What the 3D model shows. It trails the logical state in `useCube` while turns animate. */
-export const animation = new AnimationQueue<CubeState, Move>(PUZZLES['3x3'].createSolved());
+export const animation = new AnimationQueue<Opaque, Opaque>(PUZZLES['3x3'].createSolved());
 
 interface CubeStore {
   puzzleId: PuzzleId;
   /** The logical cube. Updated synchronously on every move; it never waits for an animation. */
-  state: CubeState;
-  history: Move[];
+  state: Opaque;
+  history: Step[];
   /** Undone moves, most recent last. */
-  future: Move[];
+  future: Step[];
   /** The scramble the current position started from, if any. */
-  scramble: Move[];
+  scramble: Step[];
   /** Most recent turn. The serial makes the same move twice in a row register as new. */
   lastTurn: { notation: string; serial: number } | null;
   /** Counts replacements of the whole cube (reset, scramble, puzzle switch), as opposed to turns. */
@@ -23,21 +30,21 @@ interface CubeStore {
   /** Ids of cubies to grey out, used by lessons to focus on one stage. */
   dimmed: ReadonlySet<number> | null;
   setPuzzle(id: PuzzleId): void;
-  turn(moves: readonly Move[]): void;
+  turn(moves: readonly Step[]): void;
   undo(): void;
   redo(): void;
   /** Replaces the cube with solved + `setup`, without animation, and clears the history. */
-  load(setup?: readonly Move[]): void;
+  load(setup?: readonly Step[]): void;
   scrambleCube(): void;
   clearHistory(): void;
   setDimmed(ids: ReadonlySet<number> | null): void;
 }
 
-export const currentPuzzle = () => PUZZLES[useCube.getState().puzzleId];
+export const currentPuzzle = (): AnyPuzzle => puzzleOf(useCube.getState().puzzleId);
 
 export const useCube = create<CubeStore>()((set, get) => {
   /** Applies moves to the logical state right away and queues the matching animations. */
-  const advance = (moves: readonly Move[]) => {
+  const advance = (moves: readonly Step[]) => {
     const puzzle = currentPuzzle();
     let { state } = get();
     for (const move of moves) {

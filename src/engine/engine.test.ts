@@ -7,6 +7,7 @@ import type { CubePuzzle } from './puzzles/cubePuzzle';
 
 const cube3 = PUZZLES['3x3'];
 const cube2 = PUZZLES['2x2'];
+const [cube4, cube5, cube6, cube7] = [PUZZLES['4x4'], PUZZLES['5x5'], PUZZLES['6x6'], PUZZLES['7x7']];
 
 function moves(puzzle: CubePuzzle, algorithm: string): Move[] {
   const parsed = puzzle.parse(algorithm);
@@ -52,7 +53,7 @@ const cubieAt = (state: CubeState, home: string) => state.find((c) => c.home.joi
 const edit = (state: CubeState, home: string, change: Partial<Cubie>): CubeState =>
   state.map((c) => (c.home.join() === home ? { ...c, ...change } : c));
 
-describe.each([cube3, cube2])('$name: move algebra', (puzzle) => {
+describe.each([cube3, cube2, cube4, cube5, cube6, cube7])('$name: move algebra', (puzzle) => {
   const solved = puzzle.createSolved();
 
   it("R followed by R' restores the original state", () => {
@@ -195,6 +196,95 @@ describe('cube conventions', () => {
     expect(faces('M U')).toEqual([null, 5]);
     // A 2×2 has no centres, so none of its faces has a colour of its own.
     expect(turnedFaces(cube2.createSolved(), moves(cube2, 'R U'), 2)).toEqual([null, null]);
+  });
+});
+
+describe('bigger cubes', () => {
+  const same = (puzzle: CubePuzzle, a: string, b: string) => expect(run(puzzle, a), `${a} = ${b}`).toEqual(run(puzzle, b));
+
+  it('builds every cubie that can be seen', () => {
+    expect([cube4, cube5, cube6, cube7].map((puzzle) => puzzle.createSolved().length)).toEqual([56, 98, 152, 218]);
+  });
+
+  it('names an inner layer by its depth, and a wide turn by how many layers it takes', () => {
+    same(cube4, 'r', 'R 2R'); // a wide turn is the face and the layer behind it
+    same(cube4, 'Rw', 'r');
+    same(cube4, '2Rw', 'r');
+    same(cube4, '2L', "l L'");
+    same(cube4, '3r', 'x L'); // three of four layers: the whole cube, less the far face
+    same(cube5, '2R', "r R'");
+    same(cube5, "M'", "3r r'"); // on an odd cube the layer under two wide ones is the middle
+    same(cube6, '3R', "3r r'");
+    same(cube7, '3L', "3l l'");
+    same(cube7, "3Rw' 2U2", "3r' 2U2");
+  });
+
+  it('refuses the moves a size does not have', () => {
+    expect(cube4.parse('M').ok).toBe(false); // no middle layer on an even cube
+    expect(cube4.parse('3R').ok).toBe(false); // the third layer from the right is 2L
+    expect(cube4.parse('4r').ok).toBe(false); // four layers is the whole cube: that is x
+    expect(cube5.parse('3R').ok).toBe(false); // the middle layer is M
+    expect(cube3.parse('2R').ok).toBe(false);
+    expect(cube7.parse("3Rw' 2U2 M 6f").ok).toBe(true);
+    expect(cube4.parse('R 2 U')).toEqual({ ok: false, error: { message: expect.stringContaining('depth'), index: 2 } });
+  });
+
+  it('scrambles each size with the turns and the length competitions use', () => {
+    const bases = (puzzle: CubePuzzle) => [...new Set(Array.from({ length: 20 }, (_, seed) => puzzle.scramble(seeded(seed + 1))).flat().map((m) => m.base))].sort();
+    expect([cube4, cube5, cube6, cube7].map((puzzle) => puzzle.scramble(seeded(3)).length)).toEqual([40, 60, 80, 100]);
+    expect(bases(cube4)).toEqual([...'BDFLRU', ...'fru'].sort());
+    expect(bases(cube5)).toEqual([...'BDFLRU', ...'bdflru'].sort());
+    expect(bases(cube6)).toEqual([...'BDFLRU', ...'fru', '3f', '3r', '3u'].sort());
+  });
+
+  it('knows which 4×4 positions turns can reach', () => {
+    const solved = cube4.createSolved();
+    const half = [-1, 0, 0, 0, 1, 0, 0, 0, -1]; // 180° about y: carries a piece to the opposite side of the top and back
+    const swap = (state: CubeState, a: string, b: string) => {
+      const [first, second] = [cubieAt(state, a), cubieAt(state, b)];
+      return edit(edit(state, a, { pos: second.pos, rot: half }), b, { pos: first.pos, rot: half });
+    };
+    // Two halves of edges can trade places on their own: that is the parity a 3×3 never shows.
+    expect(cube4.validate(swap(solved, '1,3,3', '-1,3,-3'))).toEqual([]);
+    // Two corners cannot, unless two centre pieces trade places with them.
+    const corners = swap(solved, '3,3,3', '-3,3,-3');
+    expect(cube4.validate(corners)).toEqual([expect.stringContaining('swapped')]);
+    expect(cube4.validate(swap(corners, '1,3,1', '-1,3,-1'))).toEqual([]);
+    // And a corner still cannot be twisted in place.
+    expect(cube4.validate(edit(solved, '3,3,3', { rot: [0, 0, 1, 1, 0, 0, 0, 1, 0] }))).toEqual([expect.stringContaining('corner')]);
+  });
+
+  it('flips a single 4×4 edge with the algorithm that does it', () => {
+    // How many stickers sit on a face that is not their colour's, however the cube is held.
+    const misplaced = (state: CubeState) => {
+      const facing = new Map<number, string[]>();
+      for (const cubie of state)
+        for (let axis = 0; axis < 3; axis++) {
+          if (Math.abs(cubie.home[axis]) !== 3) continue;
+          const way = [0, 1, 2].map((row) => cubie.rot[row * 3 + axis] * Math.sign(cubie.home[axis])).join();
+          const face = axis * 2 + (cubie.home[axis] > 0 ? 0 : 1);
+          facing.set(face, [...(facing.get(face) ?? []), way]);
+        }
+      return [...facing.values()].reduce((total, ways) => {
+        const counts = ways.map((way) => ways.filter((other) => other === way).length);
+        return total + ways.length - Math.max(...counts);
+      }, 0);
+    };
+    expect(misplaced(run(cube4, 'x y2 r U2 l'))).toBeGreaterThan(4);
+
+    // The pure edge flip, written in inner layers: the two halves of one edge trade places and nothing else moves,
+    // which puts four stickers on the wrong face.
+    const flipped = run(cube4, "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2");
+    expect(cube4.validate(flipped)).toEqual([]);
+    expect(cube4.isSolved(flipped)).toBe(false);
+    expect(misplaced(flipped)).toBe(4);
+    // Corners are untouched, and flipping the edge a second time puts the cube back.
+    expect(flipped.filter((c) => c.home.every((v) => Math.abs(v) === 3)).every((c) => c.pos.every((v, i) => v === c.home[i]))).toBe(true);
+    expect(cube4.isSolved(run(cube4, "(2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2)2"))).toBe(true);
+    // The shorter algorithm solvers use mid-solve flips the same edge but shuffles the top layer too. It is just as legal.
+    const quick = run(cube4, "r U2 x r U2 r U2 r' U2 l U2 r' U2 r U2 r' U2 r'");
+    expect(cube4.validate(quick)).toEqual([]);
+    expect(cube4.isSolved(quick)).toBe(false);
   });
 });
 

@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, Check, Copy, Play, Redo2, Trash2, Undo2 } from 'lucide-react';
 import { Transport } from '../components/algorithm/Transport';
 import { Button, cx, IconButton, Label } from '../components/ui/ui';
-import { applyMoves, turnedFaces } from '../engine/core/CubeState';
-import { invertMoves } from '../engine/core/Move';
-import { PUZZLES } from '../engine/puzzles';
+import { puzzleOf } from '../engine/puzzles';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
 
@@ -14,19 +12,20 @@ const HISTORY_SHOWN = 240;
 function History() {
   const history = useCube((s) => s.history);
   const state = useCube((s) => s.state);
-  const size = useCube((s) => PUZZLES[s.puzzleId].size);
+  const puzzle = useCube((s) => puzzleOf(s.puzzleId));
   const canRedo = useCube((s) => s.future.length > 0);
   const scramble = useCube((s) => s.scramble);
   const { undo, redo, clearHistory } = useCube.getState();
   const list = useRef<HTMLOListElement>(null);
   const hidden = Math.max(0, history.length - HISTORY_SHOWN);
 
-  // Every move is a sticker in the colour of the face it turned. To find those colours, walk the cube back to
+  // Every move is a sticker in the colour of the face it turned. To find those colours, walk the puzzle back to
   // where the first move shown started, then forward again.
   const { shown, faces } = useMemo(() => {
     const shown = history.slice(-HISTORY_SHOWN);
-    return { shown, faces: turnedFaces(applyMoves(state, invertMoves(shown)), shown, size) };
-  }, [history, state, size]);
+    const start = shown.reduceRight((before, move) => puzzle.apply(before, puzzle.invert(move)), state);
+    return { shown, faces: puzzle.faces(start, shown) };
+  }, [history, state, puzzle]);
 
   // Keep the newest move in view.
   useEffect(() => {
@@ -58,7 +57,7 @@ function History() {
       )}
       {history.length === 0 ? (
         <p className="mt-2.5 rounded-lg border border-dotted border-white/20 px-3 py-3 text-xs leading-relaxed text-muted">
-          No moves yet. Press R, U or F, or drag a face of the cube.
+          No moves yet. Turn it with the keyboard, or drag a piece.
         </p>
       ) : (
         <ol ref={list} className="mt-2.5 flex max-h-44 flex-wrap gap-1 overflow-y-auto p-0.5">
@@ -85,7 +84,7 @@ function History() {
 export function PlaygroundPanel() {
   const input = useAlgorithm((s) => s.input);
   const setInput = useAlgorithm((s) => s.setInput);
-  const puzzle = useCube((s) => PUZZLES[s.puzzleId]);
+  const puzzle = useCube((s) => puzzleOf(s.puzzleId));
   const parsed = useMemo(() => puzzle.parse(input), [puzzle, input]);
   const field = useRef<HTMLTextAreaElement>(null);
   const [copied, setCopied] = useState(false);
@@ -177,8 +176,7 @@ export function PlaygroundPanel() {
           </Button>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted">
-          Faces R L U D F B, slices M E S, wide r or Rw, rotations x y z. Add ' to reverse, 2 to double, and (R U)3 to
-          repeat.
+          {puzzle.help}
         </p>
       </section>
       <Transport />

@@ -1,16 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Move } from '../engine/core/Move';
-import { animation, currentPuzzle, useCube } from './cubeStore';
+import { animation, currentPuzzle, useCube, type Step } from './cubeStore';
 
 interface AlgorithmStore {
   /** Text in the playground input. */
   input: string;
   /** Name of the loaded sequence when it came from the library or a lesson. */
   title: string | null;
-  moves: Move[];
+  moves: Step[];
   /** Position a demo starts from. When set, restarting rebuilds it instead of rewinding move by move. */
-  setup: Move[] | null;
+  setup: Step[] | null;
   /** How many of `moves` have been applied. */
   index: number;
   playing: boolean;
@@ -18,7 +17,7 @@ interface AlgorithmStore {
   completedLessons: string[];
   setInput(input: string): void;
   /** Loads a sequence for playback. A demo also puts the cube in its starting position. */
-  open(moves: Move[], demo?: { title: string; setup: Move[] }): void;
+  open(moves: Step[], demo?: { title: string; setup: Step[] }): void;
   close(): void;
   play(): Promise<void>;
   pause(): void;

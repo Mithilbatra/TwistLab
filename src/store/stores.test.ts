@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyMoves, type CubeState } from '../engine/core/CubeState';
+import type { Move } from '../engine/core/Move';
 import { PUZZLES } from '../engine/puzzles';
 import { averageOf, formatTime, histogram } from '../utils/stats';
 import { useAlgorithm } from './algorithmStore';
@@ -105,7 +106,7 @@ describe('cube store and its animation', () => {
     const { state, scramble, history } = useCube.getState();
     expect(scramble).toHaveLength(20);
     expect(history).toEqual([]);
-    expect(state).toEqual(applyMoves(solved, scramble));
+    expect(state).toEqual(applyMoves(solved, scramble as Move[]));
     expect(cube.validate(state)).toEqual([]);
     expect(cube.isSolved(state)).toBe(false);
 
@@ -298,7 +299,7 @@ describe('saved data', () => {
     const good = { id: 'a', ms: 9870, scramble: 'R U', puzzle: '3x3', at: 1 };
     localStorage.setItem(
       'twistlab.timer',
-      JSON.stringify({ state: { solves: [good, { ...good, ms: 'quick' }, { ...good, puzzle: '7x7' }, null, 42] }, version: 0 }),
+      JSON.stringify({ state: { solves: [good, { ...good, ms: 'quick' }, { ...good, puzzle: '9x9' }, null, 42] }, version: 0 }),
     );
     await useTimer.persist.rehydrate();
     expect(useTimer.getState().solves).toEqual([good]);

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Keyboard, X } from 'lucide-react';
-import { PUZZLES } from '../../engine/puzzles';
+import { puzzleOf } from '../../engine/puzzles';
 import { isMac } from '../../hooks/useKeyboard';
 import { useCube } from '../../store/cubeStore';
 import { LIMITS, MOVE_NAMES, useSettings } from '../../store/settingsStore';
@@ -32,7 +32,7 @@ function Shortcut({ keys, children, muted }: { keys: string[]; children: ReactNo
 /** The shortcut reference. It reads the live key map, so it always shows the keys as currently bound. */
 function Shortcuts() {
   const keymap = useSettings((s) => s.keymap);
-  const table = useCube((s) => PUZZLES[s.puzzleId].table);
+  const puzzle = useCube((s) => puzzleOf(s.puzzleId));
   const cap = (family: string) => keymap[family]?.toUpperCase() || '–';
   return (
     <>
@@ -76,12 +76,16 @@ function Shortcuts() {
         <div className="mt-4 grid gap-x-10 gap-y-5 sm:grid-cols-2">
           <div>
             <Label className="mb-1.5">Turns</Label>
-            {Object.keys(keymap).map((family) => (
-              <Shortcut key={family} keys={[cap(family)]} muted={!table[family]}>
-                {MOVE_NAMES[family]}
-                {!table[family] && ' (3×3 only)'}
-              </Shortcut>
-            ))}
+            {Object.keys(keymap).map((family) => {
+              // A key works on a puzzle when the puzzle has a move of that name.
+              const has = puzzle.parse(family).ok;
+              return (
+                <Shortcut key={family} keys={[cap(family)]} muted={!has}>
+                  {puzzle.moveNames?.[family] ?? MOVE_NAMES[family]}
+                  {!has && ' (not on this puzzle)'}
+                </Shortcut>
+              );
+            })}
           </div>
           <div className="space-y-5">
             <div>
@@ -118,9 +122,9 @@ function Shortcuts() {
 export function BottomBar() {
   const speed = useSettings((s) => s.speed);
   const setSpeed = useSettings((s) => s.setSpeed);
-  const moveCount = useCube((s) => s.history.filter((move) => PUZZLES[s.puzzleId].countsAsMove(move)).length);
+  const moveCount = useCube((s) => s.history.filter((move) => puzzleOf(s.puzzleId).countsAsMove(move)).length);
   const status = useCube((s): keyof typeof STATUS => {
-    const puzzle = PUZZLES[s.puzzleId];
+    const puzzle = puzzleOf(s.puzzleId);
     if (puzzle.validate(s.state).length > 0) return 'invalid';
     return puzzle.isSolved(s.state) ? 'solved' : 'unsolved';
   });

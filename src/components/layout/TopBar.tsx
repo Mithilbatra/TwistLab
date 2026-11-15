@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Maximize, Minimize, RotateCcw, Settings, Shuffle } from 'lucide-react';
+import { ChevronDown, Maximize, Minimize, RotateCcw, Settings, Shuffle } from 'lucide-react';
 import { PUZZLES, type PuzzleId } from '../../engine/puzzles';
+import { PUZZLE_CATEGORIES } from '../../engine/puzzles/PuzzleEngine';
 import { useCube } from '../../store/cubeStore';
 import { useSettings } from '../../store/settingsStore';
 import { useTimer } from '../../store/timerStore';
-import { Button, cx, IconButton, Logo } from '../ui/ui';
+import { Button, IconButton, Logo } from '../ui/ui';
 
 export function TopBar() {
   const puzzleId = useCube((s) => s.puzzleId);
@@ -33,25 +34,42 @@ export function TopBar() {
         TWIST<span className="text-accent">LAB</span>
       </span>
       <span aria-hidden="true" className="hidden h-5 border-l border-dotted border-white/35 xl:block" />
-      <h1 className="min-w-0 truncate text-sm font-medium text-zinc-50">{PUZZLES[puzzleId].name}</h1>
-      <div role="radiogroup" aria-label="Puzzle" className="flex shrink-0 gap-0.5 rounded-lg bg-base p-0.5 shadow-[inset_0_0_0_1px_#ffffff17]">
-        {(Object.keys(PUZZLES) as PuzzleId[]).map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="radio"
-            aria-checked={id === puzzleId}
-            aria-label={PUZZLES[id].name}
-            onClick={() => useCube.getState().setPuzzle(id)}
-            className={cx(
-              'h-7 rounded-md px-2 font-mono text-xs transition-colors',
-              id === puzzleId ? 'bg-accent font-semibold text-accent-ink' : 'text-zinc-400 hover:text-zinc-100',
-            )}
-          >
-            {PUZZLES[id].size}×{PUZZLES[id].size}
-          </button>
-        ))}
-      </div>
+      <h1 className="sr-only">{PUZZLES[puzzleId].name}</h1>
+      {/* The browser's own menu does the choosing, so it works with a keyboard and on a phone. What shows is drawn to match the keys beside it. */}
+      <label className="key relative flex h-8 min-w-0 items-center gap-1.5 rounded-lg bg-raised pr-2 pl-3 text-[13px] font-medium text-zinc-50 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent hover:bg-[#282a30]">
+        {/* The full name where there is room for it, the short one on a phone. */}
+        <span aria-hidden="true" className="truncate max-sm:hidden">
+          {PUZZLES[puzzleId].name}
+        </span>
+        <span aria-hidden="true" className="truncate font-mono text-xs font-semibold sm:hidden">
+          {PUZZLES[puzzleId].label}
+        </span>
+        <ChevronDown size={14} aria-hidden="true" className="shrink-0 text-muted" />
+        <select
+          aria-label="Puzzle"
+          value={puzzleId}
+          onChange={(event) => {
+            useCube.getState().setPuzzle(event.target.value as PuzzleId);
+            event.target.blur(); // hand the keyboard back to the puzzle
+          }}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        >
+          {PUZZLE_CATEGORIES.map((category) => {
+            const ids = (Object.keys(PUZZLES) as PuzzleId[]).filter((id) => PUZZLES[id].category === category);
+            return (
+              ids.length > 0 && (
+                <optgroup key={category} label={category}>
+                  {ids.map((id) => (
+                    <option key={id} value={id}>
+                      {PUZZLES[id].name}
+                    </option>
+                  ))}
+                </optgroup>
+              )
+            );
+          })}
+        </select>
+      </label>
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
         <Button aria-label="Scramble" onClick={scramble}>
           <Shuffle />

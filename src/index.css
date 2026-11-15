@@ -348,7 +348,7 @@
 /* The move just made, set in dots as tall as the stage allows. */
 .stage-glyph {
   font-family: var(--font-display);
-  font-size: clamp(88px, 44cqmin, 330px);
+  font-size: calc(clamp(88px, 44cqmin, 330px) * var(--fit, 1));
   font-weight: 900;
   line-height: 0.82;
   color: var(--sticker);

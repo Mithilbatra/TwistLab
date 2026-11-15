@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import { Focus, ZoomIn, ZoomOut } from 'lucide-react';
 import { CanvasTexture, MathUtils, NeutralToneMapping, RepeatWrapping, Vector3, type PerspectiveCamera } from 'three';
-import { turnedFace } from '../../engine/core/CubeState';
-import { PUZZLES } from '../../engine/puzzles';
+import { puzzleOf } from '../../engine/puzzles';
+import type { CubePuzzle } from '../../engine/puzzles/cubePuzzle';
 import { useCube } from '../../store/cubeStore';
-import { LIMITS, useSettings } from '../../store/settingsStore';
+import { canTurn, LIMITS, useSettings } from '../../store/settingsStore';
 import { cx, IconButton } from '../ui/ui';
 import { CubeModel } from './CubeModel';
+import { PieceModel } from './PieceModel';
 
 /** Where the camera sits by default: up, front and right faces in view. */
 const HOME_DIRECTION = new Vector3(0.58, 0.44, 0.69).normalize();
@@ -118,6 +119,7 @@ function Floor() {
 
 function Scene() {
   const puzzleId = useCube((s) => s.puzzleId);
+  const puzzle = puzzleOf(puzzleId);
   return (
     <>
       <ambientLight intensity={0.8} />
@@ -131,7 +133,12 @@ function Scene() {
         <Lightformer form="rect" intensity={0.9} position={[7, 2, -3]} scale={[9, 5, 1]} target={[0, 0, 0]} />
         <Lightformer form="ring" intensity={1.6} position={[3, 3, 8]} scale={2.5} target={[0, 0, 0]} />
       </Environment>
-      <CubeModel key={puzzleId} puzzle={PUZZLES[puzzleId]} />
+      {/* A plain cube has a model of its own, with rounded cubies. Every other puzzle is drawn from its own pieces. */}
+      {puzzle.model.kind === 'cube' ? (
+        <CubeModel key={puzzleId} puzzle={puzzle as CubePuzzle} />
+      ) : (
+        <PieceModel key={puzzleId} model={puzzle.model} />
+      )}
       <ContactShadows position={[0, FLOOR, 0]} scale={12} far={5} blur={2.2} opacity={0.85} resolution={512} />
       <Floor />
       <CameraRig />
@@ -146,15 +153,14 @@ function Scene() {
  */
 function Backdrop() {
   const last = useCube((s) => s.lastTurn);
-  const solved = useCube((s) => PUZZLES[s.puzzleId].isSolved(s.state));
+  const solved = useCube((s) => puzzleOf(s.puzzleId).isSolved(s.state));
   const face = useCube((s) => {
-    const puzzle = PUZZLES[s.puzzleId];
-    // "R2" and "R'" turn the same face as "R": the suffix says how far, not which.
-    const turned = s.lastTurn && puzzle.table[s.lastTurn.notation.replace(/[2']/g, '')];
-    return turned ? turnedFace(s.state, turned, puzzle.size) : null;
+    const puzzle = puzzleOf(s.puzzleId);
+    const last = s.lastTurn && puzzle.parse(s.lastTurn.notation);
+    return last && last.ok ? (puzzle.faces(s.state, last.moves)[0] ?? null) : null;
   });
   return (
-    // With no face to name (a slice, a rotation, a 2×2) the colour falls back to the section's own.
+    // With no one face to name (a slice, a rotation, anything but an odd cube) the colour falls back to the section's own.
     <div
       data-sticker={face ?? undefined}
       data-solved={solved || undefined}
@@ -169,6 +175,8 @@ function Backdrop() {
             key={last.serial}
             data-testid="current-move"
             className="stage-glyph mt-2 animate-stamp motion-reduce:animate-none motion-reduce:opacity-60"
+            // A long name, such as DBR2' on a Megaminx, is set smaller so that it still fits the stage.
+            style={{ '--fit': Math.min(1, 2.4 / last.notation.length) } as CSSProperties}
           >
             {last.notation}
           </div>
@@ -216,8 +224,8 @@ const CORNERS = [
 ];
 
 export function Viewport() {
-  // In the timer the cube only previews the scramble, so it cannot be turned.
-  const turnable = useSettings((s) => s.view !== 'timer');
+  // In the timer and the library the puzzle is only there to look at: every drag orbits.
+  const turnable = useSettings((s) => canTurn(s.view));
   return (
     <section aria-label="3D puzzle" className="stage relative min-h-0 flex-1">
       <Backdrop />
@@ -233,9 +241,15 @@ export function Viewport() {
         <span key={corner} aria-hidden="true" className={cx('pointer-events-none absolute size-2.5 border-white/30', corner)} />
       ))}
       <p className="pointer-events-none absolute top-5 right-6 hidden text-right font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted uppercase select-none sm:block">
-        {turnable && 'Drag a face to turn it'}
-        <br />
-        Drag the background to orbit
+        {turnable ? (
+          <>
+            Drag a piece to turn it
+            <br />
+            Drag the background to orbit
+          </>
+        ) : (
+          'Drag to look around'
+        )}
       </p>
       <CameraControls />
     </section>

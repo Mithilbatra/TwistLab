@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
 import { Pause, Play, SkipBack, StepBack, StepForward, X } from 'lucide-react';
-import { applyMoves, turnedFaces } from '../../engine/core/CubeState';
-import { invertMoves } from '../../engine/core/Move';
-import { PUZZLES } from '../../engine/puzzles';
+import { puzzleOf } from '../../engine/puzzles';
 import { useAlgorithm } from '../../store/algorithmStore';
 import { useCube } from '../../store/cubeStore';
 import { Button, IconButton, Label } from '../ui/ui';
@@ -17,12 +15,12 @@ export function Transport() {
   const index = useAlgorithm((s) => s.index);
   const playing = useAlgorithm((s) => s.playing);
   const state = useCube((s) => s.state);
-  const size = useCube((s) => PUZZLES[s.puzzleId].size);
+  const puzzle = useCube((s) => puzzleOf(s.puzzleId));
   const { play, pause, next, previous, restart, close } = useAlgorithm.getState();
-  // Walk the cube back to where the sequence began, then forward, noting the face each move turns.
+  // Walk the puzzle back to where the sequence began, then forward, noting the face each move turns.
   const faces = useMemo(
-    () => turnedFaces(applyMoves(state, invertMoves(moves.slice(0, index))), moves, size),
-    [state, moves, index, size],
+    () => puzzle.faces(moves.slice(0, index).reduceRight((before, move) => puzzle.apply(before, puzzle.invert(move)), state), moves),
+    [state, moves, index, puzzle],
   );
   if (moves.length === 0) return null;
   const finished = index >= moves.length;
