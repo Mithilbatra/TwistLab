@@ -2,18 +2,23 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { ExtrudeGeometry, Matrix4, MeshStandardMaterial, Quaternion, Shape, Vector3, type Group, type Object3D } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import type { AnimationQueue } from '../../engine/animation/AnimationQueue';
+import type { CubeState } from '../../engine/core/CubeState';
 import type { Axis, Mat3 } from '../../engine/core/math';
-import { moveForLayer } from '../../engine/core/Move';
+import { moveForLayer, type Move } from '../../engine/core/Move';
 import type { CubePuzzle } from '../../engine/puzzles/cubePuzzle';
-import { animation, useCube } from '../../store/cubeStore';
-import { useSettings } from '../../store/settingsStore';
+import { animation as sharedQueue, useCube } from '../../store/cubeStore';
+import { canTurn, useSettings } from '../../store/settingsStore';
 
 /** World units per grid step. Grid coordinates are doubled, so 0.5 makes every cubie one unit wide. */
 const STEP = 0.5;
 /** Seconds for a quarter turn at 1× speed. */
-const TURN_SECONDS = 0.28;
+export const TURN_SECONDS = 0.28;
 /** Pixels the pointer must travel before a drag on the cube commits to a turn. */
-const DRAG_THRESHOLD = 14;
+export const DRAG_THRESHOLD = 14;
+
+// The queue is shared by every puzzle. While this model is mounted it holds a cube's states and moves.
+const animation: AnimationQueue<CubeState, Move> = sharedQueue;
 
 // One entry per side of a cubie, in the engine's order: +x −x +y −y +z −z (right, left, up, down, front, back).
 // `rotation` turns a sticker, modelled facing +z, to face that side.
@@ -65,7 +70,7 @@ function quaternionOf(rot: Mat3): Quaternion {
   return quaternion;
 }
 
-const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 /**
  * Renders a cube puzzle from the animation queue.
@@ -157,7 +162,7 @@ function useDragToTurn(puzzle: CubePuzzle) {
   const max = puzzle.size - 1;
 
   return (event: ThreeEvent<PointerEvent>) => {
-    if (animation.busy || event.nativeEvent.button !== 0 || useSettings.getState().view === 'timer') return;
+    if (animation.busy || event.nativeEvent.button !== 0 || !canTurn(useSettings.getState().view)) return;
     let object: Object3D | null = event.object;
     while (object && object.userData.cubie === undefined) object = object.parent;
     const cubie = object ? animation.displayed[object.userData.cubie as number] : undefined;

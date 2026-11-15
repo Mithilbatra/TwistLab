@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, cx, Kbd, Label } from '../components/ui/ui';
-import { PUZZLES } from '../engine/puzzles';
+import { puzzleOf } from '../engine/puzzles';
 import { isMac } from '../hooks/useKeyboard';
 import { useAlgorithm } from '../store/algorithmStore';
 import { useCube } from '../store/cubeStore';
@@ -12,7 +12,7 @@ export function SettingsPanel() {
   const fov = useSettings((s) => s.fov);
   const inspection = useSettings((s) => s.inspection);
   const keymap = useSettings((s) => s.keymap);
-  const table = useCube((s) => PUZZLES[s.puzzleId].table);
+  const puzzle = useCube((s) => puzzleOf(s.puzzleId));
   const { setSpeed, setFov, setInspection, bindKey, resetKeymap } = useSettings.getState();
   /** The move family waiting for its new key, if any. */
   const [binding, setBinding] = useState<string | null>(null);
@@ -103,9 +103,9 @@ export function SettingsPanel() {
         <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
           {Object.keys(keymap).map((family) => (
             <li key={family} className="flex items-center justify-between gap-2">
-              <span className={cx('truncate', !table[family] && 'text-faint')}>
+              <span className={cx('truncate', !puzzle.parse(family).ok && 'text-faint')}>
                 <span className="mr-2 inline-block w-3 font-mono font-semibold text-zinc-50">{family}</span>
-                {MOVE_NAMES[family]}
+                {puzzle.moveNames?.[family] ?? MOVE_NAMES[family]}
               </span>
               <button
                 type="button"

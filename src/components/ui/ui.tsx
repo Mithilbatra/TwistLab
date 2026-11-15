@@ -1,5 +1,4 @@
 import { Fragment, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import type { Move } from '../../engine/core/Move';
 
 export const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
 
@@ -53,7 +52,7 @@ export function Kbd({ children }: { children: ReactNode }) {
  * A sequence drawn as stickers. Each move takes the colour of the face it turns
  * (`faces`, from the engine's `turnedFaces`); slices and rotations stay grey.
  */
-export function Stickers({ moves, faces, className }: { moves: readonly Move[]; faces: readonly (number | null)[]; className?: string }) {
+export function Stickers({ moves, faces, className }: { moves: readonly { notation: string }[]; faces: readonly (number | null)[]; className?: string }) {
   return (
     <code className={cx('flex flex-wrap gap-1', className)}>
       {moves.map((move, i) => (

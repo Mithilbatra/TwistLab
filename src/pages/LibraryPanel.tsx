@@ -1,95 +1,102 @@
-import { Lock } from 'lucide-react';
-import { cx, Label } from '../components/ui/ui';
-import { PUZZLES, UPCOMING, type PuzzleId } from '../engine/puzzles';
+import { Lock, Play } from 'lucide-react';
+import { Button, cx, Label } from '../components/ui/ui';
+import { COMING_SOON, PUZZLES, type PuzzleId } from '../engine/puzzles';
+import { PUZZLE_CATEGORIES } from '../engine/puzzles/PuzzleEngine';
 import { useCube } from '../store/cubeStore';
 import { useSettings } from '../store/settingsStore';
 
-/** An n×n face as a small picture of the puzzle, its stickers taken in turn from the six colours. */
-function Glyph({ size, lit }: { size: number; lit: boolean }) {
+const LEVELS = ['', 'Beginner', 'Easy', 'Intermediate', 'Hard', 'Expert'];
+
+function Difficulty({ level }: { level: number }) {
   return (
-    <span
-      aria-hidden="true"
-      className="grid size-11 shrink-0 gap-[3px] rounded-lg bg-base p-[5px]"
-      style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
-    >
-      {Array.from({ length: size * size }, (_, i) => (
-        <span
-          key={i}
-          data-sticker={(i * 5 + size) % 6}
-          className={cx('rounded-[2px] bg-(--sticker) transition-opacity', !lit && 'opacity-40')}
-        />
-      ))}
+    <span className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] tracking-wider text-muted uppercase">
+      <span className="flex gap-0.5" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((step) => (
+          <span key={step} className={cx('size-1.5 rounded-[1px]', step <= level ? 'bg-accent' : 'bg-white/15')} />
+        ))}
+      </span>
+      {LEVELS[level]}
     </span>
   );
 }
 
+/**
+ * Every puzzle, by category. Choosing one puts it on the stage beside the list, where
+ * it can be looked at from any side; Play then opens it in the playground. A puzzle
+ * is listed as playable only once its mechanics exist and are tested.
+ */
 export function LibraryPanel() {
   const puzzleId = useCube((s) => s.puzzleId);
-
-  const open = (id: PuzzleId) => {
-    useCube.getState().setPuzzle(id);
-    useSettings.getState().setView('playground');
-  };
+  const ids = Object.keys(PUZZLES) as PuzzleId[];
 
   return (
     <div className="divide-y divide-dotted divide-white/20">
-      <section className="px-4 py-4">
-        <Label>Ready to play</Label>
-        <ul className="mt-3 space-y-2.5">
-          {(Object.keys(PUZZLES) as PuzzleId[]).map((id) => {
-            const active = id === puzzleId;
-            return (
-              <li key={id}>
-                <button
-                  type="button"
-                  aria-current={active ? 'true' : undefined}
-                  onClick={() => open(id)}
-                  className={cx(
-                    'key group flex w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-3 text-left',
-                    active ? 'border-accent bg-accent/[0.12]' : 'border-transparent bg-raised hover:bg-[#282a30]',
-                  )}
-                >
-                  <Glyph size={PUZZLES[id].size} lit={active} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-zinc-50">{PUZZLES[id].name}</span>
-                    <span className="block text-xs text-muted">{PUZZLES[id].summary}</span>
-                  </span>
-                  <span
+      {PUZZLE_CATEGORIES.map((category) => {
+        const playable = ids.filter((id) => PUZZLES[id].category === category);
+        const planned = COMING_SOON.filter((puzzle) => puzzle.category === category);
+        return (
+          <section key={category} aria-label={category} className="px-4 py-4">
+            <div className="flex items-baseline justify-between">
+              <Label>{category}</Label>
+              <span className="font-mono text-xs text-muted">
+                {playable.length} of {playable.length + planned.length} playable
+              </span>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {playable.map((id) => {
+                const puzzle = PUZZLES[id];
+                const active = id === puzzleId;
+                return (
+                  <li
+                    key={id}
                     className={cx(
-                      'font-mono text-[10px] font-semibold tracking-[0.14em] uppercase',
-                      active ? 'text-accent' : 'text-muted group-hover:text-zinc-200',
+                      'rounded-xl border-[1.5px] transition-colors',
+                      active ? 'border-accent bg-accent/[0.1]' : 'border-transparent bg-raised hover:bg-[#282a30]',
                     )}
                   >
-                    {active ? 'Active' : 'Open'}
+                    <button
+                      type="button"
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => useCube.getState().setPuzzle(id)}
+                      className="block w-full rounded-xl px-3 py-2.5 text-left"
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm font-semibold text-zinc-50">{puzzle.name}</span>
+                        <Difficulty level={puzzle.difficulty} />
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted">{puzzle.summary}</span>
+                    </button>
+                    {active && (
+                      <div className="flex items-center gap-3 px-3 pb-3">
+                        <Button variant="primary" onClick={() => useSettings.getState().setView('playground')}>
+                          <Play />
+                          Play
+                        </Button>
+                        <span className="text-xs text-muted">On the stage now. Drag around it to look.</span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+              {planned.map((puzzle) => (
+                <li key={puzzle.name} className="rounded-xl border border-dotted border-white/20 px-3 py-2.5">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-zinc-400">
+                      <Lock size={13} className="shrink-0 text-faint" />
+                      <span className="truncate">{puzzle.name}</span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] tracking-wider text-faint uppercase">Coming soon</span>
                   </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      <section className="px-4 py-4">
-        <Label>Coming soon</Label>
-        <ul className="mt-3 space-y-2">
-          {UPCOMING.map((puzzle) => (
-            <li key={puzzle.name} className="flex items-center gap-3 rounded-xl border border-dotted border-white/20 px-3 py-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-faint">
-                <Lock size={15} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-medium text-zinc-400">{puzzle.name}</span>
-                <span className="block text-xs text-faint">{puzzle.summary}</span>
-              </span>
-              <span className="text-[11px] text-faint">Not yet available</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          Each puzzle is an engine plus a 3D model behind one interface, so playback, history and the timer work with a
-          new puzzle as they are.
-        </p>
-      </section>
+                  <span className="mt-1 flex items-start justify-between gap-3">
+                    <span className="text-xs leading-relaxed text-faint">{puzzle.summary}</span>
+                    <Difficulty level={puzzle.difficulty} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }

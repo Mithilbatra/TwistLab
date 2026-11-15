@@ -4,6 +4,7 @@ const status = (page: Page) => page.getByTestId('cube-status');
 const moveCount = (page: Page) => page.getByTestId('move-count');
 const position = (page: Page) => page.getByTestId('playback-position');
 const algorithmField = (page: Page) => page.getByRole('textbox', { name: 'Algorithm' });
+const choosePuzzle = (page: Page, name: string) => page.getByRole('combobox', { name: 'Puzzle' }).selectOption({ label: name });
 
 // Every flow below must also run clean: no console errors and no uncaught exceptions.
 let errors: string[];
@@ -140,7 +141,7 @@ test('dragging a face turns a layer, dragging the background only orbits', async
 });
 
 test('switches to the 2×2 and uses only the moves it has', async ({ page }) => {
-  await page.getByRole('radio', { name: '2×2 Pocket Cube' }).click();
+  await choosePuzzle(page, '2×2 Pocket Cube');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('2×2 Pocket Cube');
   await page.keyboard.press('r');
   await page.keyboard.press('m'); // no middle slice on a 2×2
@@ -149,11 +150,106 @@ test('switches to the 2×2 and uses only the moves it has', async ({ page }) => 
   await algorithmField(page).fill('R M');
   await expect(page.getByRole('alert')).toContainText('This puzzle has no M move');
 
+  // The library lists every puzzle by category. Choosing one puts it on the stage; Play opens the playground.
   await page.getByRole('button', { name: 'Puzzle Library' }).click();
-  await expect(page.getByText('Not yet available')).toHaveCount(4);
+  await expect(page.getByRole('region', { name: 'Classic Cubes' })).toContainText('6 of 6 playable');
+  await expect(page.getByText('Coming soon')).toHaveCount(10);
   await page.getByRole('button', { name: /3×3 Rubik's Cube/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText("3×3 Rubik's Cube");
   await expect(status(page)).toHaveText('Solved');
+  // The library only shows the puzzle: a drag across it orbits the camera, and the move keys do nothing.
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2 - 20, box.y + box.height / 2 + 10);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 30, { steps: 8 });
+  await page.mouse.up();
+  await page.keyboard.press('r');
+  await expect(moveCount(page)).toHaveText('0');
+  await expect(status(page)).toHaveText('Solved');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(algorithmField(page)).toBeVisible();
+});
+
+test('plays a bigger cube, with its inner layers and deeper wide turns', async ({ page }) => {
+  await choosePuzzle(page, "5×5 Professor's Cube");
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText("5×5 Professor's Cube");
+  await algorithmField(page).fill('3Rw 2U M Q');
+  await expect(page.getByRole('alert')).toContainText('"Q" is not a move');
+  await algorithmField(page).fill("3Rw 2U' M x");
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('4 / 4');
+  await expect(moveCount(page)).toHaveText('3'); // the rotation is not a move
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(page.getByRole('region', { name: 'Move history' }).getByRole('listitem')).toHaveText(['3r', "2U'", 'M']);
+
+  await choosePuzzle(page, "4×4 Rubik's Revenge");
+  await page.keyboard.press('m'); // an even cube has no middle layer
+  await page.keyboard.press('Alt+r');
+  await expect(page.getByTestId('current-move')).toHaveText('r');
+  await expect(moveCount(page)).toHaveText('1');
+});
+
+test('plays a puzzle that is not a cube: turns in thirds, tips, and solved by its own rules', async ({ page }) => {
+  await choosePuzzle(page, 'Pyraminx');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pyraminx');
+  await expect(status(page)).toHaveText('Solved');
+  await page.keyboard.press('u');
+  await expect(page.getByTestId('current-move')).toHaveText('U');
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.keyboard.press('u');
+  await page.keyboard.press('u'); // three thirds make a whole turn
+  await expect(status(page)).toHaveText('Solved');
+  await page.keyboard.press('Alt+l'); // Alt turns the tip alone
+  await expect(page.getByTestId('current-move')).toHaveText('l');
+  await page.keyboard.press('Shift+Alt+L');
+  await expect(page.getByTestId('current-move')).toHaveText("l'");
+  await expect(status(page)).toHaveText('Solved');
+  await page.keyboard.press('d'); // a Pyraminx has no D
+  await expect(moveCount(page)).toHaveText('5');
+
+  await page.getByRole('button', { name: 'Scramble', exact: true }).click();
+  await expect(status(page)).toHaveText('Unsolved');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(status(page)).toHaveText('Solved');
+
+  // A Megaminx turns in fifths and has faces a cube does not.
+  await choosePuzzle(page, 'Megaminx');
+  await algorithmField(page).fill("BR2' DBL R++ D--");
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('4 / 4', { timeout: 10_000 });
+  await expect(page.getByTestId('current-move')).toHaveText('D--');
+  await algorithmField(page).fill('F5');
+  await expect(page.getByRole('alert')).toContainText('comes back round after 5');
+});
+
+test('solves a shape mod by shape, and turns its pieces by dragging', async ({ page }) => {
+  await choosePuzzle(page, 'Mirror Cube');
+  await expect(status(page)).toHaveText('Solved');
+  await algorithmField(page).fill("(R U R' U')6 x y");
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(position(page)).toHaveText('26 / 26', { timeout: 20_000 });
+  await expect(status(page)).toHaveText('Solved'); // a box again, whichever way it is held
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+
+  // Drag across the middle of the puzzle: some layer turns, and the puzzle is no longer a box.
+  const box = (await page.locator('canvas').boundingBox())!;
+  const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.move(centre.x - 20, centre.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(centre.x + 90, centre.y + 30, { steps: 8 });
+  await page.mouse.up();
+  await expect(moveCount(page)).toHaveText('1');
+  await expect(status(page)).toHaveText('Unsolved');
+  await expect(page.getByTestId('current-move')).toHaveText(/^[RLUDFBMES]'?$/);
+
+  // A drag that starts on the background still only moves the camera.
+  await page.waitForTimeout(400);
+  await page.mouse.move(box.x + 24, box.y + 120);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 160, box.y + 170, { steps: 8 });
+  await page.mouse.up();
+  await expect(moveCount(page)).toHaveText('1');
 });
 
 test('the Algorithm Lab demonstrates an algorithm and remembers favourites', async ({ page }) => {

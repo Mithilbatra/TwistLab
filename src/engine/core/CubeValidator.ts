@@ -1,4 +1,4 @@
-import { centreFrame, type CubeState, type Cubie } from './CubeState';
+import { applyMove, centreFrame, createSolvedCube, type CubeState, type Cubie } from './CubeState';
 import { determinant, IDENTITY, multiply, sameValues, transform, transpose, type Vec3 } from './math';
 
 /**
@@ -11,10 +11,15 @@ import { determinant, IDENTITY, multiply, sameValues, transform, transpose, type
  *
  * Reachability (the quantities every legal turn leaves unchanged)
  *   - corner twists add up to a multiple of 3;
- *   - 3×3: edge flips add up to an even number;
- *   - 3×3: the permutation of all 26 cubies is even, because a quarter turn is
- *     always two 4-cycles (corners + edges, or edges + centres);
- *   - 3×3: the six centres move together as one rigid frame.
+ *   - odd sizes: the flips of the middle edges add up to an even number, and the
+ *     six face centres move together as one rigid frame;
+ *   - any size: the pieces of each kind (corners, each sort of edge and centre)
+ *     are permuted with a parity that some sequence of turns can produce. On a
+ *     3×3 that means the permutation of all 26 cubies is even; on a 4×4 the edges
+ *     are free, while corners and centres must agree.
+ *
+ * Every other piece has only one way to sit in a slot, so structure already
+ * settles its orientation.
  */
 export function validateCube(state: CubeState, n: number): string[] {
   const max = n - 1;
@@ -29,8 +34,7 @@ export function validateCube(state: CubeState, n: number): string[] {
     positions.add(cubie.pos.join());
   }
   if (positions.size !== state.length) problems.push('Two cubies occupy the same position');
-  // shortcut: reachability rules cover 2×2 and 3×3 only, add the 4×4 parity rules with a 4×4 engine.
-  if (problems.length > 0 || n > 3) return problems;
+  if (problems.length > 0) return problems;
 
   // A cubie with 3 outer sides is a corner, 2 an edge, 1 a centre.
   const outerSides = (cubie: Cubie) => cubie.home.filter((v) => Math.abs(v) === max).length;
@@ -39,12 +43,14 @@ export function validateCube(state: CubeState, n: number): string[] {
 
   if (sum(state.filter((c) => outerSides(c) === 3), cornerTwist) % 3 !== 0)
     problems.push('A corner is twisted in place (twists do not add up to a multiple of 3)');
-  if (n === 3) {
-    if (sum(state.filter((c) => outerSides(c) === 2), (c) => edgeFlip(c, max)) % 2 !== 0)
+  if (n % 2 === 1) {
+    // Only the edge in the middle of each side can be flipped in place.
+    const middleEdges = state.filter((c) => outerSides(c) === 2 && c.home.includes(0));
+    if (sum(middleEdges, (c) => edgeFlip(c, max)) % 2 !== 0)
       problems.push('An edge is flipped in place (an odd number of edges are flipped)');
-    if (!isEvenPermutation(state)) problems.push('Two pieces are swapped (the permutation is odd)');
     if (!centresAreRigid(state, n)) problems.push('The centres are in an arrangement no turn can produce');
   }
+  if (!reachableParities(n).has(parities(state))) problems.push('Two pieces are swapped (the permutation is odd)');
   return problems;
 }
 
@@ -72,19 +78,47 @@ function edgeFlip(edge: Cubie, max: number): number {
   return facing === reference(edge.pos) ? 0 : 1;
 }
 
-function isEvenPermutation(state: CubeState): boolean {
+/**
+ * Whether each kind of piece is permuted evenly or oddly, as one bit per kind. Pieces
+ * are of one kind when turns can carry them to each other's slots: their home
+ * coordinates agree up to order and sign.
+ */
+function parities(state: CubeState): number {
+  const kindOf = (cubie: Cubie) => cubie.home.map(Math.abs).sort((a, b) => a - b).join();
+  const kinds = [...new Set(state.map(kindOf))];
   const owner = new Map(state.map((cubie) => [cubie.home.join(), cubie.id]));
   const visited = new Set<number>();
-  let even = true;
+  let odd = 0;
   for (const start of state) {
     let length = 0;
     for (let c = start; !visited.has(c.id); c = state[owner.get(c.pos.join())!]) {
       visited.add(c.id);
       length++;
     }
-    if (length > 0 && length % 2 === 0) even = !even; // a cycle of even length is an odd permutation
+    if (length > 0 && length % 2 === 0) odd ^= 1 << kinds.indexOf(kindOf(start)); // a cycle of even length is an odd permutation
   }
-  return even;
+  return odd;
+}
+
+const reachable = new Map<number, Set<number>>();
+
+/**
+ * The parity patterns turns can produce on an n×n×n cube: every combination of what
+ * a quarter turn of each layer does. Layers the same distance from the middle do
+ * the same thing, on any axis, so one axis and the layers from the middle outwards cover them all.
+ */
+function reachableParities(n: number): Set<number> {
+  let patterns = reachable.get(n);
+  if (!patterns) {
+    patterns = new Set([0]);
+    const solved = createSolvedCube(n);
+    for (let layer = (n - 1) % 2; layer < n; layer += 2) {
+      const turn = parities(applyMove(solved, { base: '', notation: '', axis: 0, layers: [layer], turns: 1 }));
+      for (const pattern of [...patterns]) patterns.add(pattern ^ turn);
+    }
+    reachable.set(n, patterns);
+  }
+  return patterns;
 }
 
 function centresAreRigid(state: CubeState, n: number): boolean {

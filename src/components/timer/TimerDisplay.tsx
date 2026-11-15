@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { turnedFaces } from '../../engine/core/CubeState';
-import { PUZZLES } from '../../engine/puzzles';
+import { puzzleOf } from '../../engine/puzzles';
 import { useCube } from '../../store/cubeStore';
 import { useSettings } from '../../store/settingsStore';
 import { useTimer } from '../../store/timerStore';
@@ -16,12 +15,12 @@ export function TimerDisplay() {
   const lastMs = useTimer((s) => s.solves.findLast((solve) => solve.puzzle === puzzleId)?.ms);
   const readout = useRef<HTMLDivElement>(null);
 
-  // The scramble as stickers: each move in the colour of the face to turn, on a cube held white up, green in front.
+  // The scramble as stickers. On a cube each move takes the colour of the face to turn, held white up, green in front.
   const strip = useMemo(() => {
-    const puzzle = PUZZLES[puzzleId];
+    const puzzle = puzzleOf(puzzleId);
     const parsed = puzzle.parse(scramble);
     const moves = parsed.ok ? parsed.moves : [];
-    return { moves, faces: turnedFaces(puzzle.createSolved(), moves, puzzle.size) };
+    return { moves, faces: puzzle.faces(puzzle.createSolved(), moves) };
   }, [scramble, puzzleId]);
 
   // A fresh scramble when the timer opens or the puzzle changes; abandon any attempt when it closes.
@@ -68,7 +67,12 @@ export function TimerDisplay() {
       onPointerCancel={() => useTimer.getState().cancel()}
     >
       <p data-testid="timer-scramble" className="mx-auto flex min-h-6 max-w-2xl justify-center">
-        {strip.moves.length > 0 && <Stickers moves={strip.moves} faces={strip.faces} className="justify-center" />}
+        {/* A long scramble (a 7×7 has a hundred moves) is set as text, so the clock and the puzzle keep their room. */}
+        {strip.moves.length > 30 ? (
+          <span className="font-mono text-[10px] leading-relaxed text-zinc-300 sm:text-xs">{scramble}</span>
+        ) : (
+          strip.moves.length > 0 && <Stickers moves={strip.moves} faces={strip.faces} className="justify-center" />
+        )}
       </p>
       {/* The digits are a dot-matrix display. They are monospaced, so the running clock does not shift about. */}
       <div

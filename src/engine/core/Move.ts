@@ -42,15 +42,25 @@ export function createMoveTable(n: number): MoveTable {
     y: { axis: 1, layers: layerCoords(n), direction: -1 },
     z: { axis: 2, layers: layerCoords(n), direction: -1 },
   };
-  if (n === 3) {
-    // Slices follow L, D and F. A wide move is the face plus the slice beside it.
+  if (n % 2 === 1) {
+    // Only an odd cube has a middle layer. The slices follow L, D and F.
     table.M = { axis: 0, layers: [0], direction: 1 };
     table.E = { axis: 1, layers: [0], direction: 1 };
     table.S = { axis: 2, layers: [0], direction: -1 };
-    for (const face of 'RLUDFB') {
-      const { axis, layers, direction } = table[face];
-      table[face.toLowerCase()] = { axis, layers: [layers[0], 0], direction };
-    }
+  }
+  for (const face of 'RLUDFB') {
+    const { axis, layers, direction } = table[face];
+    // The layer `depth` deep behind this face: depth 1 is the face itself. The "+ 0" keeps a middle layer at 0, not -0.
+    const layer = (depth: number) => Math.sign(layers[0]) * (max - 2 * (depth - 1)) + 0;
+    // A wide move takes the face and the layers behind it: r is two deep, 3r three.
+    for (let depth = 2; depth < n; depth++)
+      table[(depth > 2 ? depth : '') + face.toLowerCase()] = {
+        axis,
+        layers: Array.from({ length: depth }, (_, i) => layer(i + 1)),
+        direction,
+      };
+    // An inner layer on its own is named by its depth from the nearer face: 2R.
+    for (let depth = 2; depth <= n / 2; depth++) table[depth + face] = { axis, layers: [layer(depth)], direction };
   }
   return table;
 }
